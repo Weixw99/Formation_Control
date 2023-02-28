@@ -49,37 +49,44 @@ class Scenario(BaseScenario):
             landmark.state.p_vel = np.zeros(world.dim_p)
 
     def reward(self, agent, world):
-        # Agents are rewarded based on minimum agent distance to each landmark, penalized for collisions
         rew = 0
-        for l in world.landmarks:
-            dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos))) for a in world.agents]
-            rew -= min(dists)
-        if agent.collide:
-            for a in world.agents:
-                if self.is_collision(a, agent):
-                    rew -= 1
+        # 每个agent的位置,应该设置每个agent的奖励，因为会引用多次
+        h0 = world.agents[0].state.p_pos
+        h1 = world.agents[1].state.p_pos
+        h2 = world.agents[2].state.p_pos
+        h3 = world.agents[3].state.p_pos
+        distance = [[self.calculate_distance(h0, h0), self.calculate_distance(h0, h1), self.calculate_distance(h0, h2), self.calculate_distance(h0, h3)],
+                    [self.calculate_distance(h1, h0), self.calculate_distance(h1, h1), self.calculate_distance(h1, h2), self.calculate_distance(h1, h3)],
+                    [self.calculate_distance(h2, h0), self.calculate_distance(h2, h1), self.calculate_distance(h2, h2), self.calculate_distance(h2, h3)],
+                    [self.calculate_distance(h3, h0), self.calculate_distance(h3, h1), self.calculate_distance(h3, h2), self.calculate_distance(h3, h3)]]
+
         return rew
 
     def observation(self, agent, world):
-        # get positions of all entities in this agent's reference frame
+        # 获取所有实体在该agent参考框架中的位置
         entity_pos = []
         for entity in world.landmarks:  # world.entities:
-            entity_pos.append(entity.state.p_pos - agent.state.p_pos)
-        # entity colors
-        entity_color = []
-        for entity in world.landmarks:  # world.entities:
-            entity_color.append(entity.color)
-        # communication of all other agents
+            entity_pos.append(entity.state.p_pos - agent.state.p_pos)  # 每个landmark对当前智能体的相对位置
+
+        # 所有其他代理人的通信
         comm = []
         other_pos = []
+        # other_vel = []
         for other in world.agents:
             if other is agent: continue
-            comm.append(other.state.c)
-            other_pos.append(other.state.p_pos - agent.state.p_pos)
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm)
+            comm.append(other.state.c)  # 所有其他智能体向该智能体发送的通信信息。（可能用不上）
+            other_pos.append(other.state.p_pos - agent.state.p_pos)  # 其他智能体对当前智能体的相对位置
+            # other_vel.append(other.state.p_vel)
+        # 返回一个包含所有实体在该智能体参考框架中的位置、所有实体的颜色信息以及其他所有智能体之间的通信信息的观测向量
+        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm)  # 拼接数组
 
     def is_collision(self, agent1, agent2):
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         dist_min = agent1.size + agent2.size
         return True if dist < dist_min else False
+
+    def calculate_distance(self, pos1, pos2):
+        delta_pos = pos1 - pos2
+        dist = np.sqrt(np.sum(np.square(delta_pos)))
+        return dist
