@@ -13,7 +13,7 @@ model_path = curr_path + '/models/'
 class Parameters:
     def __init__(self):
         # Environment
-        self.scenario = 'simple_v0'  # 定义要使用 MPE 中的哪个环境
+        self.scenario = 'formation_v1'  # 定义要使用 MPE 中的哪个环境
         self.algo_name = 'ma-ddpg'  # 算法名称
         self.device = 'cuda' if tf.test.is_gpu_available() else 'cpu'  # 检测GPU
         self.episodes_num = 6000  # 训练的回合数
@@ -36,15 +36,15 @@ class Parameters:
 
         # Evaluation
         self.restore = False  # 恢复存储在load-dir（或save-dir如果未load-dir 提供）中的先前训练状态，并继续训练
-        self.display = False  # 在屏幕上显示存储在load-dir（或save-dir如果没有load-dir 提供）中的训练策略，但不继续训练
+        self.display = True  # 在屏幕上显示存储在load-dir（或save-dir如果没有load-dir 提供）中的训练策略，但不继续训练
         self.benchmark = False  # 对保存的策略运行基准评估，将结果保存到benchmark-dir文件夹
         self.benchmark_iter = 100000  # 运行基准测试的迭代次数
-        self.benchmark_dir = './benchmark_files/'  # 保存基准数据的目录
-        self.plots_dir = './learning_curves/'  # 保存训练曲线的目录
+        self.benchmark_dir = './models/benchmark_files/'  # 保存基准数据的目录
+        self.plots_dir = './models/learning_curves/'  # 保存训练曲线的目录
 
 
 def train(parameters):
-    with util.single_threaded_session():
+    with util.single_threaded_session():  # 创建一个TensorFlow会话,确保TensorFlow运算的正确执行,同时避免了多线程环境下的竞争和不一致性问题。
         # 创建环境
         env = make_env(parameters.scenario, parameters.benchmark)
         # 创建agent
@@ -54,20 +54,20 @@ def train(parameters):
         print('Use scenario:{},algo:{},device:{}'.format(parameters.scenario, parameters.algo_name, parameters.device))
 
         # 初始化
-        util.initialize()
+        util.initialize()  # 确保所有的变量都已经被正确地初始化。
 
         parameters.save_dir = os.path.join(parameters.save_dir, parameters.scenario)
         if not os.path.exists(parameters.save_dir):
             os.makedirs(parameters.save_dir)
         total_files = len([file for file in os.listdir(parameters.save_dir)])
-        # 判断是否加载上次训练好的模型
+        # 判断是否加载上次训练好的模型,如果加载上次的模型查看效果，就读取上次的训练结果。
         if parameters.display or parameters.restore or parameters.benchmark:
             if parameters.load_dir == "":
                 parameters.save_dir = os.path.join(parameters.save_dir, f'{total_files}' + '/')
                 parameters.load_dir = parameters.save_dir
             print('Loading previous state...')
             util.load_state(parameters.load_dir)  # 加载模型
-        else:
+        else:  # 如果训练代码，则在环境文件下创建新的文件存放网络参数
             parameters.save_dir = os.path.join(parameters.save_dir, f'{total_files + 1}' + '/')
             os.makedirs(parameters.save_dir)
 
@@ -86,12 +86,12 @@ def train(parameters):
             # 获取action
             action_n = [agent.action(obs) for agent, obs in zip(trainers, obs_n)]
             # step
-            new_obs_n, rew_n, done_n, info_n = env.step(action_n)
+            new_obs_n, rew_n, done_n, info_n = env.step(action_n, obs_n)
             episode_step += 1
             done = all(done_n)
             terminal = (episode_step >= parameters.episodes_len)
             # collect experience
-            for i, agent in enumerate(trainers):
+            for i, agent in enumerate(trainers):  # 将新的经验元组（experience）添加到每个智能体的经验缓存（replay buffer）中
                 agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done_n[i], terminal)
             obs_n = new_obs_n
 
@@ -106,9 +106,9 @@ def train(parameters):
                 for a in agent_rewards:
                     a.append(0)
                 agent_info.append([[]])
-            # increment global step counter
+            # 递增全局步数计数器
             train_step += 1
-            # for benchmarking learned policies
+            # 用于衡量所学policy的基准
             if parameters.benchmark:
                 for i, info in enumerate(info_n):
                     agent_info[-1][i].append(info_n['n'])
@@ -125,18 +125,17 @@ def train(parameters):
                 env.render()
                 continue
 
-            # update all trainers, if not in display or benchmark mode
+            # 如果不是在显示或基准模式下，更新所有训练者
             loss = None
             for agent in trainers:
                 agent.preupdate()
             for agent in trainers:
                 loss = agent.update(trainers, train_step)
 
-                # print(loss)
-            # save model, display training output
+            # 保存模型，显示训练输出
             if terminal and (len(episode_rewards) % parameters.save_rate == 0):
                 util.save_state(parameters.save_dir, saver=saver)
-                # print statement depends on whether or not there are adversaries
+                # 打印状态取决于是否有对手的存在
                 if adversaries_num == 0:
                     print("steps: {}, episodes: {}, mean episode reward: {}, time: {}".format(
                         train_step, len(episode_rewards), np.mean(episode_rewards[-parameters.save_rate:]), round(time.time()-t_start, 3)))
@@ -150,7 +149,7 @@ def train(parameters):
                 for rew in agent_rewards:
                     final_ep_ag_rewards.append(np.mean(rew[-parameters.save_rate:]))
 
-            # saves final episode reward for plotting training curve later
+            # 保存最后回合的奖励，以便以后绘制训练曲线。
             if len(episode_rewards) > parameters.episodes_num:
                 rew_file_name = parameters.plots_dir + parameters.exp_name + '_rewards.pkl'
                 with open(rew_file_name, 'wb') as fp:

@@ -193,7 +193,7 @@ class MultiAgentEnv(gym.Env):
         self.render_geoms_xform = None  # 存储了对应的几何变换矩阵,重置为空
 
     # render environment
-    def render(self, state, mode='human'):
+    def render(self, mode='human'):
         if mode == 'human':
             alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
             message = ''
@@ -226,23 +226,32 @@ class MultiAgentEnv(gym.Env):
             self.render_geoms = []
             self.render_geoms_xform = []
 
-            for e, entity in enumerate(self.world.entities):
-                if e == 0:
+            for i, agent in enumerate(self.world.agents):
+                if i == 0:  # 对虚拟领航点设置
+                    geom = rendering.make_circle(agent.size/2.5)
+                else:  # 对三艘船进行设置
                     boat_width = 0.05
                     boat_height = 0.06
                     l, r, t, b = -boat_width / 2, boat_width / 2, boat_height, 0
                     geom = rendering.FilledPolygon([(l, b), (l, t), (0, 0.08), (r, t), (r, b)])
-                else:
-                    geom = rendering.make_circle(entity.size)
                 xform = rendering.Transform()
-                if 'agent' in entity.name:
-                    geom.set_color(*entity.color, alpha=0.5)
-                else:
-                    geom.set_color(*entity.color)
+                geom.set_color(*agent.color, alpha=0.5)
                 geom.add_attr(xform)
                 self.render_geoms.append(geom)
                 self.render_geoms_xform.append(xform)
 
+            for i, landmark in enumerate(self.world.landmarks):
+                if i == 0:  # 目标点设置为三角形
+                    triangle_size = 0.08
+                    l, r, t, b = -triangle_size / 2, triangle_size / 2, triangle_size, 0
+                    geom = rendering.FilledPolygon([(l, b), (0, t), (r, b)])
+                else:
+                    geom = rendering.make_circle(landmark.size*2)
+                xform = rendering.Transform()
+                geom.set_color(*landmark.color)
+                geom.add_attr(xform)
+                self.render_geoms.append(geom)
+                self.render_geoms_xform.append(xform)
             # 在查看器中添加几何图形
             for viewer in self.viewers:
                 viewer.geoms = []

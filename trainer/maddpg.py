@@ -141,7 +141,7 @@ class MADDPGAgentTrainer(AgentTrainer):
             obs_ph_n.append(U.BatchInput(obs_shape_n[i], name="observation"+str(i)).get())
 
         # Create all the functions necessary to train the model
-        self.q_train, self.q_update, self.q_debug = q_train(
+        self.q_train, self.q_update, self.q_debug = q_train(  # 用于训练值网络
             scope=self.name,
             make_obs_ph_n=obs_ph_n,
             act_space_n=act_space_n,
@@ -152,7 +152,7 @@ class MADDPGAgentTrainer(AgentTrainer):
             local_q_func=local_q_func,
             num_units=args.units_num
         )
-        self.act, self.p_train, self.p_update, self.p_debug = p_train(
+        self.act, self.p_train, self.p_update, self.p_debug = p_train(  # 用于训练策略网络
             scope=self.name,
             make_obs_ph_n=obs_ph_n,
             act_space_n=act_space_n,

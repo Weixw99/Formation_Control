@@ -5,7 +5,7 @@ from trainer.maddpg import MADDPGAgentTrainer
 
 def make_env(scenario_name, benchmark=False):
     # 用于将多代理环境导入为类似 OpenAI Gym 的对象的代码
-    from multienvs.environment_v0 import MultiAgentEnv
+    from multienvs.environment_v1 import MultiAgentEnv
     import multienvs.scenarios as scenarios
 
     # load scenario from script
@@ -34,11 +34,11 @@ def get_trainers(env, num_adversaries, obs_shape_n, arglist):
     trainers = []
     model = mlp_model
     trainer = MADDPGAgentTrainer
-    for i in range(num_adversaries):
+    for i in range(num_adversaries):  # 设置对手的网络
         trainers.append(trainer(
             "agent_%d" % i, model, obs_shape_n, env.action_space, i, arglist,
             local_q_func=(arglist.adv_policy == 'ddpg')))
-    for i in range(num_adversaries, env.n):
+    for i in range(num_adversaries, env.n):  # 设置agent的网络结构
         trainers.append(trainer(
             "agent_%d" % i, model, obs_shape_n, env.action_space, i, arglist,
             local_q_func=(arglist.good_policy == 'ddpg')))
