@@ -6,6 +6,12 @@ from multienvs.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
+    def __init__(self):
+        self.formation_dis = None
+        self.formation_k = None
+        self.path_track_dis = None
+        self.path_track_k = None
+
     def make_world(self):
         world = World()
         # 先设置世界属性
@@ -64,10 +70,10 @@ class Scenario(BaseScenario):
         h2 = world.agents[2].state.p_pos
         h3 = world.agents[3].state.p_pos
         l0 = world.landmarks[0].state.p_pos
-        formation_dis = 0.2  # 编队期望距离
-        formation_k = 0.5  # 编队弹性连接力系数
-        path_track_dis = 0.3  # 弹性路径跟踪期望距离
-        path_track_k = 0.8
+        self.formation_dis = 0.1  # 编队期望距离
+        self.formation_k = 0.8  # 编队弹性连接力系数
+        self.path_track_dis = 0.2  # 弹性路径跟踪期望距离
+        self.path_track_k = 0.8
 
         if agent.name == "agent 0":  # 如果是虚拟领航者
             distance_aim = self.calculate_distance(h0, l0)
@@ -75,91 +81,42 @@ class Scenario(BaseScenario):
                 rew += 1.6
             rew -= distance_aim * 0.8
         elif agent.name == "agent 1":
-            dis_dir1 = [h1 - h2, h1 - h3]  # 如果x计算出为正，则other在agent在左边
             distance = [self.calculate_distance(h1, h0), self.calculate_distance(h1, h1),
                         self.calculate_distance(h1, h2), self.calculate_distance(h1, h3)]
             # 编队控制部分
-            if dis_dir1[0][0]*dis_dir1[1][0] < 0:  # 判断agent1是否在两船中间
-                # 计算与其他智能体之间的弹力
-                f12 = -formation_k * (distance[2] - formation_dis)**2
-                f13 = -formation_k * (distance[3] - formation_dis)**2
-            else:  # agent1在编队两侧
-                if distance[2] < distance[3]:
-                    f12 = -formation_k * (distance[2] - formation_dis)**2
-                    f13 = 0
-                else:
-                    f12 = 0
-                    f13 = -formation_k * (distance[3] - formation_dis)**2
+            f = self.formation_reward(agent, world.agents[2], world.agents[3])
             # 弹性路径跟踪部分
-            f10 = -path_track_k * (distance[0] - path_track_dis)
-            f = f10 + f12 + f13
+            f10 = -self.path_track_k * (distance[0] - self.path_track_dis)
+            f = f10 + f
             rew += f
-            # 障碍规避部分
-            if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
-                rew -= 10
-            for other in world.agents:
-                if agent is other:
-                    continue
-                if self.is_collision(other, agent):
-                    rew -= 10
 
         elif agent.name == "agent 2":
-            dis_dir2 = [h2 - h1, h2 - h3]
             distance = [self.calculate_distance(h2, h0), self.calculate_distance(h2, h1),
                         self.calculate_distance(h2, h2), self.calculate_distance(h2, h3)]
             # 编队控制部分
-            if dis_dir2[0][0] * dis_dir2[1][0] < 0:  # 判断agent1是否在两船中间
-                # 计算与其他智能体之间的弹力
-                f21 = -formation_k * (distance[1] - formation_dis) ** 2
-                f23 = -formation_k * (distance[3] - formation_dis) ** 2
-            else:  # agent1在编队两侧
-                if distance[1] < distance[3]:
-                    f21 = -formation_k * (distance[1] - formation_dis) ** 2
-                    f23 = 0
-                else:
-                    f21 = 0
-                    f23 = -formation_k * (distance[3] - formation_dis) ** 2
+            f = self.formation_reward(agent, world.agents[1], world.agents[3])
             # 弹性路径跟踪部分
-            f20 = -path_track_k * (distance[0] - path_track_dis)
-            f = f20 + f21 + f23
+            f20 = -self.path_track_k * (distance[0] - self.path_track_dis)
+            f = f20 + f
             rew += f
-            # 障碍规避部分
-            if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
-                rew -= 10
-            for other in world.agents:
-                if agent is other:
-                    continue
-                if self.is_collision(other, agent):
-                    rew -= 10
 
         elif agent.name == "agent 3":
-            dis_dir3 = [h3 - h1, h3 - h2]
             distance = [self.calculate_distance(h3, h0), self.calculate_distance(h3, h1),
                         self.calculate_distance(h3, h2), self.calculate_distance(h3, h3)]
             # 编队控制部分
-            if dis_dir3[0][0] * dis_dir3[1][0] < 0:  # 判断agent1是否在两船中间
-                # 计算与其他智能体之间的弹力
-                f31 = -formation_k * (distance[1] - formation_dis) ** 2
-                f32 = -formation_k * (distance[2] - formation_dis) ** 2
-            else:  # agent1在编队两侧
-                if distance[1] < distance[2]:
-                    f31 = -formation_k * (distance[1] - formation_dis) ** 2
-                    f32 = 0
-                else:
-                    f31 = 0
-                    f32 = -formation_k * (distance[2] - formation_dis) ** 2
+            f = self.formation_reward(agent, world.agents[1], world.agents[2])
             # 弹性路径跟踪部分
-            f30 = -path_track_k * (distance[0] - path_track_dis)
-            f = f30 + f31 + f32
+            f30 = -self.path_track_k * (distance[0] - self.path_track_dis)
+            f = f30 + f
             rew += f
-            # 障碍规避部分
-            if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
+        # 障碍规避部分
+        if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
+            rew -= 10
+        for other in world.entities:
+            if other is agent or other is world.landmarks[0]:
+                continue
+            elif self.is_collision(agent, other):
                 rew -= 10
-            for other in world.agents:
-                if agent is other:
-                    continue
-                if self.is_collision(other, agent):
-                    rew -= 10
         return rew
 
     def observation(self, agent, world):
@@ -190,3 +147,23 @@ class Scenario(BaseScenario):
         delta_pos = pos1 - pos2
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         return dist
+
+    def formation_reward(self, agent, other1, other2):
+        agent_pos = agent.state.p_pos
+        other1_pos = other1.state.p_pos
+        other2_pos = other2.state.p_pos
+        dis_dir = [agent_pos - other1_pos, agent_pos - other2_pos]
+        distance = [self.calculate_distance(agent_pos, other1_pos), self.calculate_distance(agent_pos, other2_pos)]
+        # 编队控制部分
+        if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
+            # 计算与其他智能体之间的弹力
+            fa1 = -self.formation_k * (distance[0] - self.formation_dis) ** 2
+            fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2
+        else:  # agent1在编队两侧
+            if distance[0] < distance[1]:
+                fa1 = -self.formation_k * (distance[0] - self.formation_dis) ** 2
+                fa2 = 0
+            else:
+                fa1 = 0
+                fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2
+        return fa1 + fa2

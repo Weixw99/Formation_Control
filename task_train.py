@@ -16,7 +16,7 @@ class Parameters:
         self.scenario = 'formation_v1'  # 定义要使用 MPE 中的哪个环境
         self.algo_name = 'ma-ddpg'  # 算法名称
         self.device = 'cuda' if tf.test.is_gpu_available() else 'cpu'  # 检测GPU
-        self.episodes_num = 10000  # 训练的回合数
+        self.episodes_num = 200  # 训练的回合数
         self.episodes_len = 300  # 每回合步数
         self.adversaries_num = 0  # 环境中的对手数量
         self.good_policy = 'ma-ddpg'  # 用于环境中“良好”（非对手）策略的算法
