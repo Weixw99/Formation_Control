@@ -40,7 +40,9 @@ class Scenario(BaseScenario):
         # agent的属性数值设置  先这样设置，后期分开设置颜色
         for i, agent in enumerate(world.agents):
             if i == 0: agent.color = np.array([1, 0.5, 0.5])
-            else: agent.color = np.array([0.35, 0.35, 0.85])
+            elif i == 1: agent.color = np.array([0.99, 0.38, 0.28])
+            elif i == 2: agent.color = np.array([0.59, 0.98, 0.59])
+            elif i == 3: agent.color = np.array([0, 0.65, 0.99])
             agent.state.p_pos = np.array([np.random.uniform(-1, 1), np.random.uniform(-0.7, -0.9)])
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
@@ -93,7 +95,7 @@ class Scenario(BaseScenario):
             f = f10 + f12 + f13
             rew += f
             # 障碍规避部分
-            if world.is_collision(agent, world.landmarks[1]) or world.is_collision(agent, world.landmarks[2]):
+            if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
                 rew -= 10
             for other in world.agents:
                 if agent is other:
@@ -122,7 +124,7 @@ class Scenario(BaseScenario):
             f = f20 + f21 + f23
             rew += f
             # 障碍规避部分
-            if world.is_collision(agent, world.landmarks[1]) or world.is_collision(agent, world.landmarks[2]):
+            if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
                 rew -= 10
             for other in world.agents:
                 if agent is other:
@@ -151,7 +153,7 @@ class Scenario(BaseScenario):
             f = f30 + f31 + f32
             rew += f
             # 障碍规避部分
-            if world.is_collision(agent, world.landmarks[1]) or world.is_collision(agent, world.landmarks[2]):
+            if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
                 rew -= 10
             for other in world.agents:
                 if agent is other:

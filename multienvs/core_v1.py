@@ -189,29 +189,8 @@ class World(object):
             if not entity.movable:
                 continue
             entity.state.p_vel = entity.state.p_vel * (1 - self.damping)  # 更新实体速度，用于减缓速度，如果不施加外力，速度将一直减少
-            if i == 3:
-                if entity.state.p_pos[0] < -0.95:
-                    entity.state.p_vel += [0.04, 0]
-                elif -0.95 <= entity.state.p_pos[0] <= 0.95 and entity.state.p_vel[0] > 0:
-                    entity.state.p_vel += [0.04, 0]
-
-                elif entity.state.p_pos[0] > 0.95:
-                    entity.state.p_vel += [-0.04, 0]
-                elif entity.state.p_pos[0] <= 0.95 and entity.state.p_vel[0] < 0:
-                    entity.state.p_vel += [-0.04, 0]
-            if i == 4:
-                if entity.state.p_pos[0] < -0.8:
-                    entity.state.p_vel += [0.014, 0]
-                elif -0.8 <= entity.state.p_pos[0] <= 0.65 and entity.state.p_vel[0] > 0:
-                    entity.state.p_vel += [0.014, 0]
-
-                elif entity.state.p_pos[0] > 0.65:
-                    entity.state.p_vel += [-0.014, 0]
-                elif entity.state.p_pos[0] <= 0.65 and entity.state.p_vel[0] < 0:
-                    entity.state.p_vel += [-0.014, 0]
-            else:
-                if p_force[i] is not None:
-                    entity.state.p_vel += (p_force[i] / entity.mass) * self.dt  # 牛二：F=ma，根据dt求出dv，即单位时间内的速度变化
+            if p_force[i] is not None:
+                entity.state.p_vel += (p_force[i] / entity.mass) * self.dt  # 牛二：F=ma，根据dt求出dv，即单位时间内的速度变化
             if entity.max_speed is not None:
                 speed = np.sqrt(np.square(entity.state.p_vel[0]) + np.square(entity.state.p_vel[1]))  # 对速度平方开方，得实际速度
                 if speed > entity.max_speed:
