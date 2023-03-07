@@ -80,35 +80,34 @@ class Scenario(BaseScenario):
             if distance_aim < 0.3:
                 rew += 1.6
             rew -= distance_aim * 0.8
+
         elif agent.name == "agent 1":
-            distance = [self.calculate_distance(h1, h0), self.calculate_distance(h1, h1),
-                        self.calculate_distance(h1, h2), self.calculate_distance(h1, h3)]
             # 编队控制部分
             f = self.formation_reward(agent, world.agents[2], world.agents[3])
             # 弹性路径跟踪部分
-            f10 = -self.path_track_k * (distance[0] - self.path_track_dis)
+            distance10 = self.calculate_distance(h1, h0)
+            f10 = -self.path_track_k * (distance10 - self.path_track_dis)
             f = f10 + f
             rew += f
 
         elif agent.name == "agent 2":
-            distance = [self.calculate_distance(h2, h0), self.calculate_distance(h2, h1),
-                        self.calculate_distance(h2, h2), self.calculate_distance(h2, h3)]
             # 编队控制部分
             f = self.formation_reward(agent, world.agents[1], world.agents[3])
             # 弹性路径跟踪部分
-            f20 = -self.path_track_k * (distance[0] - self.path_track_dis)
+            distance20 = self.calculate_distance(h2, h0)
+            f20 = -self.path_track_k * (distance20 - self.path_track_dis)
             f = f20 + f
             rew += f
 
         elif agent.name == "agent 3":
-            distance = [self.calculate_distance(h3, h0), self.calculate_distance(h3, h1),
-                        self.calculate_distance(h3, h2), self.calculate_distance(h3, h3)]
             # 编队控制部分
             f = self.formation_reward(agent, world.agents[1], world.agents[2])
             # 弹性路径跟踪部分
-            f30 = -self.path_track_k * (distance[0] - self.path_track_dis)
+            distance30 = self.calculate_distance(h3, h0)
+            f30 = -self.path_track_k * (distance30 - self.path_track_dis)
             f = f30 + f
             rew += f
+
         # 障碍规避部分
         if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
             rew -= 10
