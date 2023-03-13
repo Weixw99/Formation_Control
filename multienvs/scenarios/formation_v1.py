@@ -23,7 +23,7 @@ class Scenario(BaseScenario):
         world.agents = [Agent() for i in range(num_agents)]
         # 设置0号是虚拟领航者
         for i, agent in enumerate(world.agents):
-            agent.name = 'agent %d' % i
+            agent.name = 'agent_%d' % i
             agent.collide = True
             agent.silent = True
             agent.size = 0.15
@@ -75,36 +75,42 @@ class Scenario(BaseScenario):
         self.path_track_dis = 0.2  # 弹性路径跟踪期望距离
         self.path_track_k = 0.8
 
-        if agent.name == "agent 0":  # 如果是虚拟领航者
+        if agent.name == "agent_0":  # 如果是虚拟领航者
             distance_aim = self.calculate_distance(h0, l0)
             if distance_aim < 0.3:
                 rew += 1.6
             rew -= distance_aim * 0.8
 
-        elif agent.name == "agent 1":
+        elif agent.name == "agent_1":
             # 编队控制部分
             f = self.formation_reward(agent, world.agents[2], world.agents[3])
             # 弹性路径跟踪部分
             distance10 = self.calculate_distance(h1, h0)
             f10 = -self.path_track_k * (distance10 - self.path_track_dis)
+            if distance10 < self.path_track_dis:
+                rew += 1.0
             f = f10 + f
             rew += f
 
-        elif agent.name == "agent 2":
+        elif agent.name == "agent_2":
             # 编队控制部分
             f = self.formation_reward(agent, world.agents[1], world.agents[3])
             # 弹性路径跟踪部分
             distance20 = self.calculate_distance(h2, h0)
             f20 = -self.path_track_k * (distance20 - self.path_track_dis)
+            if distance20 < self.path_track_dis:
+                rew += 1.0
             f = f20 + f
             rew += f
 
-        elif agent.name == "agent 3":
+        elif agent.name == "agent_3":
             # 编队控制部分
             f = self.formation_reward(agent, world.agents[1], world.agents[2])
             # 弹性路径跟踪部分
             distance30 = self.calculate_distance(h3, h0)
             f30 = -self.path_track_k * (distance30 - self.path_track_dis)
+            if distance30 < self.path_track_dis:
+                rew += 1.0
             f = f30 + f
             rew += f
 

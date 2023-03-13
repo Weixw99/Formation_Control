@@ -5,42 +5,7 @@ import pickle
 import os
 import common.utils as util
 from agent import make_env, get_trainers
-
-curr_path = os.path.dirname(os.path.abspath(__file__))  # 当前文件所在绝对路径
-model_path = curr_path + '/models/'
-
-
-class Parameters:
-    def __init__(self):
-        # Environment
-        self.scenario = 'formation_v1'  # 定义要使用 MPE 中的哪个环境
-        self.algo_name = 'ma-ddpg'  # 算法名称
-        self.device = 'cuda' if tf.test.is_gpu_available() else 'cpu'  # 检测GPU
-        self.episodes_num = 10000  # 训练的回合数
-        self.episodes_len = 200  # 每回合步数
-        self.adversaries_num = 0  # 环境中的对手数量
-        self.good_policy = 'ma-ddpg'  # 用于环境中“良好”（非对手）策略的算法
-        self.adv_policy = 'ma-ddpg'  # 用于环境中对手策略的算法
-
-        # Core training parameters
-        self.lr = 1e-2  # 学习率
-        self.gamma = 0.95  # 折扣因子
-        self.batch_size = 1024  # 批量大小
-        self.units_num = 64  # MLP 中的单元数
-
-        # Checkpointing
-        self.exp_name = ''  # 实验名称，用作保存所有结果的文件名
-        self.save_dir = model_path  # 保存中间训练结果和模型的目录
-        self.save_rate = 100  # 每次完成此数量的训练时都会保存模型
-        self.load_dir = ''  # 从中加载训练状态和模型的目录
-
-        # Evaluation
-        self.restore = False  # 恢复存储在load-dir（或save-dir如果未load-dir 提供）中的先前训练状态，并继续训练
-        self.display = False  # 在屏幕上显示存储在load-dir（或save-dir如果没有load-dir 提供）中的训练策略，但不继续训练
-        self.benchmark = False  # 对保存的策略运行基准评估，将结果保存到benchmark-dir文件夹
-        self.benchmark_iter = 100000  # 运行基准测试的迭代次数
-        self.benchmark_dir = './models/benchmark_files/'  # 保存基准数据的目录
-        self.plots_dir = './models/learning_curves/'  # 保存训练曲线的目录
+import config
 
 
 def train(parameters):
@@ -81,6 +46,10 @@ def train(parameters):
         episode_step = 0
         train_step = 0
         t_start = time.time()
+        if parameters.use_wandb:
+            wandb_run = config.MyWandb(parameters)
+            wandb_run.wandb_init()
+            train_info = {}
         print('Starting iterations...')
         while True:
             # 获取action
@@ -89,7 +58,7 @@ def train(parameters):
             new_obs_n, rew_n, done_n, info_n = env.step(action_n, obs_n)
             episode_step += 1
             done = all(done_n)
-            terminal = (episode_step >= parameters.episodes_len)
+            terminal = (episode_step >= parameters.max_episode_len)
             # collect experience
             for i, agent in enumerate(trainers):  # 将新的经验元组（experience）添加到每个智能体的经验缓存（replay buffer）中
                 agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done_n[i], terminal)
@@ -98,6 +67,7 @@ def train(parameters):
             for i, rew in enumerate(rew_n):  # 奖励累计
                 episode_rewards[-1] += rew
                 agent_rewards[i][-1] += rew
+
 
             if done or terminal:
                 obs_n = env.reset()
@@ -126,41 +96,38 @@ def train(parameters):
                 continue
 
             # 如果不是在显示或基准模式下，更新所有训练者
-            loss = None
             for agent in trainers:
                 agent.preupdate()
-            for agent in trainers:
                 loss = agent.update(trainers, train_step)
-
+                if loss:
+                    train_info['%s/q_loss' % agent.name] = loss[0]
+                    train_info['%s/p_loss' % agent.name] = loss[1]
+                    train_info['%s/target_q_mean' % agent.name] = loss[2]
+                    train_info['%s/rew' % agent.name] = loss[3]
+                    train_info['%s/target_q_next' % agent.name] = loss[4]
+                    train_info['%s/target_q_sta' % agent.name] = loss[5]
             # 保存模型，显示训练输出
             if terminal and (len(episode_rewards) % parameters.save_rate == 0):
                 util.save_state(parameters.save_dir, saver=saver)
-                # 打印状态取决于是否有对手的存在
-                if adversaries_num == 0:
-                    print("steps: {}, episodes: {}, mean episode reward: {}, time: {}".format(
-                        train_step, len(episode_rewards), np.mean(episode_rewards[-parameters.save_rate:]), round(time.time()-t_start, 3)))
-                else:
-                    print("steps: {}, episodes: {}, mean episode reward: {}, agent episode reward: {}, time: {}".format(
-                        train_step, len(episode_rewards), np.mean(episode_rewards[-parameters.save_rate:]),
-                        [np.mean(rew[-parameters.save_rate:]) for rew in agent_rewards], round(time.time()-t_start, 3)))
+                # 打印状态
+                print("steps: {}, episodes: {}, mean episode reward: {}, agent episode reward: {}, time: {}".format(
+                    train_step, len(episode_rewards), np.mean(episode_rewards[-parameters.save_rate:]),
+                    [np.mean(rew[-parameters.save_rate:]) for rew in agent_rewards], round(time.time()-t_start, 3)))
                 t_start = time.time()
                 # Keep track of final episode reward
                 final_ep_rewards.append(np.mean(episode_rewards[-parameters.save_rate:]))
-                for rew in agent_rewards:
+                train_info['reward'] = final_ep_rewards[-1]
+                for i, rew in enumerate(agent_rewards):
                     final_ep_ag_rewards.append(np.mean(rew[-parameters.save_rate:]))
+                    train_info['agent_%i/reward' % i] = final_ep_ag_rewards[-1]
 
             # 保存最后回合的奖励，以便以后绘制训练曲线。
-            if len(episode_rewards) > parameters.episodes_num:
-                rew_file_name = parameters.plots_dir + parameters.exp_name + '_rewards.pkl'
-                with open(rew_file_name, 'wb') as fp:
-                    pickle.dump(final_ep_rewards, fp)
-                agrew_file_name = parameters.plots_dir + parameters.exp_name + '_agrewards.pkl'
-                with open(agrew_file_name, 'wb') as fp:
-                    pickle.dump(final_ep_ag_rewards, fp)
+            if len(episode_rewards) > parameters.train_num:
                 print('...Finished total of {} episodes.'.format(len(episode_rewards)))
+                if parameters.use_wandb: wandb_run.wandb_finish()
                 break
-
+            if parameters.use_wandb: wandb_run.wandb_log(train_info, len(episode_rewards))
 
 if __name__ == '__main__':
-    parameter = Parameters()
+    parameter = config.get_config()
     train(parameter)
