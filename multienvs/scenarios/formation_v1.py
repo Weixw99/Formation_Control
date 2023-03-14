@@ -141,11 +141,6 @@ class Scenario(BaseScenario):
 
     def formation_reward(self, agent, other1, other2):
         rew = 0
-        for other in self.world.entities:
-            if other is agent or other is self.world.landmarks[0]:
-                continue
-            elif self.is_collision(agent, other):
-                rew -= 10
         agent_pos = agent.state.p_pos
         other1_pos = other1.state.p_pos
         other2_pos = other2.state.p_pos

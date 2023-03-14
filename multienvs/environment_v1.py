@@ -33,7 +33,8 @@ class MultiAgentEnv(gym.Env):
         # 如果为真，即使行动是连续的，行动也将被离散地执行。
         self.force_discrete_action = world.discrete_action if hasattr(world, 'discrete_action') else False
         # 如果是真的，每个agent都有相同的奖励
-        self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
+        # self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
+        self.shared_reward = False
         self.time = 0
 
         # 配置空间

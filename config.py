@@ -42,9 +42,8 @@ def get_config():
     parser.add_argument("--benchmark_iter", type=int, default=100000, help="运行基准测试的迭代次数")
     parser.add_argument("--benchmark_dir", type=str, default="./benchmark_files/", help="保存基准数据的目录")
     parser.add_argument("--plots_dir", type=str, default="./learning_curves/", help="保存训练曲线的目录")
-    # w and b
-    parser.add_argument("--use_wandb", action='store_false', default=True,
-                        help="[for wandb usage], by default True, will log date to wandb server. or else will use tensorboard to log data.")
+    # wandb
+    parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
     return parser.parse_args()
 
 
@@ -55,7 +54,7 @@ class MyWandb:
         self.project_name = 'maddpg_formation'
         self.wandb_user_name = 'weixw99'
         self.pa_name = socket.gethostname()
-        self.exp_name = "first"+"_train_num: " + str(parameters.train_num)
+        self.exp_name = "no_share"+"_train_num: " + str(parameters.train_num)
         self.group_name = parameters.scenario
         self.wandb_dir = str(parameters.save_dir)
 
