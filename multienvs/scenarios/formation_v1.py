@@ -45,10 +45,10 @@ class Scenario(BaseScenario):
     def reset_world(self, world):
         # agent的属性数值设置  先这样设置，后期分开设置颜色
         for i, agent in enumerate(world.agents):
-            if i == 0: agent.color = np.array([1, 0.5, 0.5])
-            elif i == 1: agent.color = np.array([0.99, 0.38, 0.28])
-            elif i == 2: agent.color = np.array([0.59, 0.98, 0.59])
-            elif i == 3: agent.color = np.array([0, 0.65, 0.99])
+            if i == 0: agent.color = np.array([1, 0.5, 0.5])  # 红色
+            elif i == 1: agent.color = np.array([0.99, 0.38, 0.28])  # 粉色
+            elif i == 2: agent.color = np.array([0.59, 0.98, 0.59])  # 绿色
+            elif i == 3: agent.color = np.array([0, 0.65, 0.99])  # 蓝色
             agent.state.p_pos = np.array([np.random.uniform(-1, 1), np.random.uniform(-0.7, -0.9)])
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
@@ -57,9 +57,13 @@ class Scenario(BaseScenario):
             if i == 0:
                 landmark.color = np.array([1, 0, 0])
                 landmark.state.p_pos = np.array([np.random.uniform(-1, 1), np.random.uniform(0.9, 1.0)])
-            else:
+            elif i == 1:
                 landmark.color = np.array([0.25, 0.25, 0.25])
-                landmark.state.p_pos = np.array([np.random.uniform(-1, 1), np.random.uniform(-0.2, 0.4)])
+                landmark.state.p_pos = np.array([np.random.uniform(-1, -0.1), np.random.uniform(-0.4, 0.5)])
+            elif i == 2:
+                landmark.color = np.array([0.25, 0.25, 0.25])
+                landmark.state.p_pos = np.array([np.random.uniform(0.1, 1), np.random.uniform(-0.4, 0.5)])
+
             landmark.state.p_vel = np.zeros(world.dim_p)
 
     def reward(self, agent, world):
@@ -76,43 +80,25 @@ class Scenario(BaseScenario):
         self.path_track_k = 0.8
 
         if agent.name == "agent_0":  # 如果是虚拟领航者
-            distance_aim = self.calculate_distance(h0, l0)
-            if distance_aim < 0.3:
-                rew += 1.6
-            rew -= distance_aim * 0.8
+            rew += self.path_track_reward(l0, h0)
 
         elif agent.name == "agent_1":
             # 编队控制部分
-            f = self.formation_reward(agent, world.agents[2], world.agents[3])
+            rew += self.formation_reward(agent, world.agents[2], world.agents[3])
             # 弹性路径跟踪部分
-            distance10 = self.calculate_distance(h1, h0)
-            f10 = -self.path_track_k * (distance10 - self.path_track_dis)
-            if distance10 < self.path_track_dis:
-                rew += 1.0
-            f = f10 + f
-            rew += f
+            rew += self.path_track_reward(h0, h1)
 
         elif agent.name == "agent_2":
             # 编队控制部分
-            f = self.formation_reward(agent, world.agents[1], world.agents[3])
+            rew += self.formation_reward(agent, world.agents[1], world.agents[3])
             # 弹性路径跟踪部分
-            distance20 = self.calculate_distance(h2, h0)
-            f20 = -self.path_track_k * (distance20 - self.path_track_dis)
-            if distance20 < self.path_track_dis:
-                rew += 1.0
-            f = f20 + f
-            rew += f
+            rew += self.path_track_reward(h0, h2)
 
         elif agent.name == "agent_3":
             # 编队控制部分
             f = self.formation_reward(agent, world.agents[1], world.agents[2])
             # 弹性路径跟踪部分
-            distance30 = self.calculate_distance(h3, h0)
-            f30 = -self.path_track_k * (distance30 - self.path_track_dis)
-            if distance30 < self.path_track_dis:
-                rew += 1.0
-            f = f30 + f
-            rew += f
+            rew += self.path_track_reward(h0, h3)
 
         # 障碍规避部分
         if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
@@ -154,12 +140,18 @@ class Scenario(BaseScenario):
         return dist
 
     def formation_reward(self, agent, other1, other2):
+        rew = 0
+        for other in self.world.entities:
+            if other is agent or other is self.world.landmarks[0]:
+                continue
+            elif self.is_collision(agent, other):
+                rew -= 10
         agent_pos = agent.state.p_pos
         other1_pos = other1.state.p_pos
         other2_pos = other2.state.p_pos
         dis_dir = [agent_pos - other1_pos, agent_pos - other2_pos]
         distance = [self.calculate_distance(agent_pos, other1_pos), self.calculate_distance(agent_pos, other2_pos)]
-        # 编队控制部分
+        """# 编队控制部分
         if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
             # 计算与其他智能体之间的弹力
             fa1 = -self.formation_k * (distance[0] - self.formation_dis) ** 2
@@ -170,5 +162,32 @@ class Scenario(BaseScenario):
                 fa2 = 0
             else:
                 fa1 = 0
-                fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2
-        return fa1 + fa2
+                fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2"""
+        if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
+            if distance[0] < 0.5 and distance[1] < 0.5:
+                rew += 1
+        else:  # agent1在编队两侧
+            if distance[0] < distance[1] and distance[0] < 0.5:
+                rew += 1
+            elif distance[0] > distance[1] and distance[1] < 0.5:
+                rew += 1
+        y_abs = abs(dis_dir[0][1]) + abs(dis_dir[1][1])
+        if y_abs < 0.1:
+            rew += 0.5
+
+        return rew
+
+    def path_track_reward(self, target, agent_pos):
+        rew = 0
+        distance = self.calculate_distance(agent_pos, target)
+        y_dis = target[1] - agent_pos[1]
+        x_dis = target[0] - agent_pos[0]
+        """f10 = -self.path_track_k * (distance - self.path_track_dis)
+        if distance < self.path_track_dis:
+            rew += 1.0
+        rew += f10"""
+        if distance < 0.3 and y_dis > 0:
+            rew += 1
+            rew -= abs(x_dis)
+        rew -= distance * 0.8
+        return rew
