@@ -14,7 +14,7 @@ def get_config():
     parser.add_argument("--scenario", type=str, default="formation_v1", help="定义要使用 MPE 中的哪个环境")
     parser.add_argument("--algo_name", type=str, default="ma-ddpg", help="算法名称")
     parser.add_argument("--device", type=str, default="cuda" if tf.test.is_gpu_available() else 'cpu', help="检测GPU")
-    parser.add_argument("--train_num", type=int, default=30000, help="训练的回合数")
+    parser.add_argument("--train_num", type=int, default=70000, help="训练的回合数")
 
     parser.add_argument("--max_episode_len", type=int, default=240, help="每回合的步数")
     parser.add_argument("--adversaries_num", type=int, default=0, help="环境中的对手数量")
@@ -54,7 +54,7 @@ class MyWandb:
         self.project_name = 'maddpg_formation'
         self.wandb_user_name = 'weixw99'
         self.pa_name = socket.gethostname()
-        self.exp_name = "no_share"+"_train_num: " + str(parameters.train_num)
+        self.exp_name = "share_add_track"+"_train_num: " + str(parameters.train_num)
         self.group_name = parameters.scenario
         self.wandb_dir = str(parameters.save_dir)
 

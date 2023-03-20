@@ -106,7 +106,7 @@ class World(object):
         # 物理阻尼
         self.damping = 0.25  # 使用damping参数来模拟摩擦和其能量损失的影响，从而减少实体的速度
         # 联系响应参数
-        self.contact_force = 1e+2  # 超参数，表示碰撞时实体施加的力大小
+        self.contact_force = 5e+1  # 超参数，表示碰撞时实体施加的力大小
         self.contact_margin = 1e-3  # 是一个常数，用于控制实体之间的最小距离
         self.t = 0
 

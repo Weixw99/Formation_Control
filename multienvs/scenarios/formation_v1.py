@@ -28,7 +28,7 @@ class Scenario(BaseScenario):
             agent.silent = True
             agent.size = 0.15
         # 单独对虚拟领航者设置
-        world.agents[0].collide = False  # 设置成不可碰撞
+        # world.agents[0].collide = False  # 设置成不可碰撞
 
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
@@ -80,34 +80,90 @@ class Scenario(BaseScenario):
         self.path_track_k = 0.8
 
         if agent.name == "agent_0":  # 如果是虚拟领航者
-            rew += self.path_track_reward(l0, h0)
+            distance = self.calculate_distance(l0, h0)
+            y_dis = l0[1] - l0[1]
+            x_dis = l0[0] - l0[0]
+            """f10 = -self.path_track_k * (distance - self.path_track_dis)
+            if distance < self.path_track_dis:
+                rew += 1.0
+            rew += f10"""
+            if distance < 0.3:
+                rew += 66
+                rew -= abs(x_dis)*2
+            rew -= distance * 4
+            # rew += self.path_track_reward(l0, h0)
 
         elif agent.name == "agent_1":
             # 编队控制部分
-            rew += self.formation_reward(agent, world.agents[2], world.agents[3])
-            # 弹性路径跟踪部分
-            rew += self.path_track_reward(h0, h1)
+            rew += self.formation_reward(agent, world.agents[2], world.agents[3], world.landmarks[0])
 
         elif agent.name == "agent_2":
             # 编队控制部分
-            rew += self.formation_reward(agent, world.agents[1], world.agents[3])
-            # 弹性路径跟踪部分
-            rew += self.path_track_reward(h0, h2)
+            rew += self.formation_reward(agent, world.agents[1], world.agents[3], world.landmarks[0])
 
         elif agent.name == "agent_3":
             # 编队控制部分
-            f = self.formation_reward(agent, world.agents[1], world.agents[2])
-            # 弹性路径跟踪部分
-            rew += self.path_track_reward(h0, h3)
+            rew += self.formation_reward(agent, world.agents[1], world.agents[2], world.landmarks[0])
 
         # 障碍规避部分
         if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
-            rew -= 10
+            rew -= 20
         for other in world.entities:
             if other is agent or other is world.landmarks[0]:
                 continue
             elif self.is_collision(agent, other):
-                rew -= 10
+                rew -= 20
+        return rew
+
+    def formation_reward(self, agent, other1, other2, target):
+        rew = 0
+        agent_pos = agent.state.p_pos
+        other1_pos = other1.state.p_pos
+        other2_pos = other2.state.p_pos
+        target_pos = target.state.p_pos
+        dis_dir = [agent_pos - other1_pos, agent_pos - other2_pos]
+        distance = [self.calculate_distance(agent_pos, other1_pos), self.calculate_distance(agent_pos, other2_pos)]
+        """# 编队控制部分
+        if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
+            # 计算与其他智能体之间的弹力
+            fa1 = -self.formation_k * (distance[0] - self.formation_dis) ** 2
+            fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2
+        else:  # agent1在编队两侧
+            if distance[0] < distance[1]:
+                fa1 = -self.formation_k * (distance[0] - self.formation_dis) ** 2
+                fa2 = 0
+            else:
+                fa1 = 0
+                fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2"""
+        if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
+            if distance[0] < 0.3 and distance[1] < 0.3:
+                rew += 10
+            rew += self.path_track_reward(target_pos, 0.3, agent_pos)  # 弹性路径跟踪部分
+        else:  # agent1在编队两侧
+            if distance[0] < distance[1] and distance[0] < 0.3:
+                rew += 10
+            elif distance[0] > distance[1] and distance[1] < 0.3:
+                rew += 10
+            rew += self.path_track_reward(target_pos, 0.42, agent_pos)  # 弹性路径跟踪部分
+        y_abs = abs(dis_dir[0][1]) + abs(dis_dir[1][1])
+        if y_abs < 0.1:
+            rew += 15
+
+        return rew
+
+    def path_track_reward(self, target, aim_dis, agent_pos):
+        rew = 0
+        distance = self.calculate_distance(agent_pos, target)
+        y_dis = target[1] - agent_pos[1]
+        x_dis = target[0] - agent_pos[0]
+        """f10 = -self.path_track_k * (distance - self.path_track_dis)
+        if distance < self.path_track_dis:
+            rew += 1.0
+        rew += f10"""
+        if distance < aim_dis:
+            rew += 20
+            rew -= abs(x_dis)
+        rew -= distance * 3
         return rew
 
     def observation(self, agent, world):
@@ -139,50 +195,4 @@ class Scenario(BaseScenario):
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         return dist
 
-    def formation_reward(self, agent, other1, other2):
-        rew = 0
-        agent_pos = agent.state.p_pos
-        other1_pos = other1.state.p_pos
-        other2_pos = other2.state.p_pos
-        dis_dir = [agent_pos - other1_pos, agent_pos - other2_pos]
-        distance = [self.calculate_distance(agent_pos, other1_pos), self.calculate_distance(agent_pos, other2_pos)]
-        """# 编队控制部分
-        if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
-            # 计算与其他智能体之间的弹力
-            fa1 = -self.formation_k * (distance[0] - self.formation_dis) ** 2
-            fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2
-        else:  # agent1在编队两侧
-            if distance[0] < distance[1]:
-                fa1 = -self.formation_k * (distance[0] - self.formation_dis) ** 2
-                fa2 = 0
-            else:
-                fa1 = 0
-                fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2"""
-        if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
-            if distance[0] < 0.5 and distance[1] < 0.5:
-                rew += 1
-        else:  # agent1在编队两侧
-            if distance[0] < distance[1] and distance[0] < 0.5:
-                rew += 1
-            elif distance[0] > distance[1] and distance[1] < 0.5:
-                rew += 1
-        y_abs = abs(dis_dir[0][1]) + abs(dis_dir[1][1])
-        if y_abs < 0.1:
-            rew += 0.5
 
-        return rew
-
-    def path_track_reward(self, target, agent_pos):
-        rew = 0
-        distance = self.calculate_distance(agent_pos, target)
-        y_dis = target[1] - agent_pos[1]
-        x_dis = target[0] - agent_pos[0]
-        """f10 = -self.path_track_k * (distance - self.path_track_dis)
-        if distance < self.path_track_dis:
-            rew += 1.0
-        rew += f10"""
-        if distance < 0.3 and y_dis > 0:
-            rew += 1
-            rew -= abs(x_dis)
-        rew -= distance * 0.8
-        return rew

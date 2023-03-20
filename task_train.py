@@ -46,7 +46,7 @@ def train(parameters):
         episode_step = 0
         train_step = 0
         t_start = time.time()
-        if parameters.use_wandb:
+        if parameters.use_wandb and parameters.display is False:
             wandb_run = config.MyWandb(parameters)
             wandb_run.wandb_init()
             train_info = {}
@@ -67,7 +67,6 @@ def train(parameters):
             for i, rew in enumerate(rew_n):  # 奖励累计
                 episode_rewards[-1] += rew
                 agent_rewards[i][-1] += rew
-
 
             if done or terminal:
                 obs_n = env.reset()
