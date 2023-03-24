@@ -88,9 +88,9 @@ class Scenario(BaseScenario):
                 rew += 1.0
             rew += f10"""
             if distance < 0.3:
-                rew += 66
-                rew -= abs(x_dis)*2
-            rew -= distance * 4
+                rew += 80
+                rew -= abs(x_dis)*4
+            rew -= distance * 5
             # rew += self.path_track_reward(l0, h0)
 
         elif agent.name == "agent_1":
@@ -107,12 +107,12 @@ class Scenario(BaseScenario):
 
         # 障碍规避部分
         if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
-            rew -= 20
+            rew -= 100
         for other in world.entities:
             if other is agent or other is world.landmarks[0]:
                 continue
             elif self.is_collision(agent, other):
-                rew -= 20
+                rew -= 100
         return rew
 
     def formation_reward(self, agent, other1, other2, target):
@@ -137,17 +137,17 @@ class Scenario(BaseScenario):
                 fa2 = -self.formation_k * (distance[1] - self.formation_dis) ** 2"""
         if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
             if distance[0] < 0.3 and distance[1] < 0.3:
-                rew += 10
-            rew += self.path_track_reward(target_pos, 0.3, agent_pos)  # 弹性路径跟踪部分
+                rew += 8
+            rew += self.path_track_reward(target_pos, 0.1, agent_pos)  # 弹性路径跟踪部分
         else:  # agent1在编队两侧
             if distance[0] < distance[1] and distance[0] < 0.3:
-                rew += 10
+                rew += 8
             elif distance[0] > distance[1] and distance[1] < 0.3:
-                rew += 10
-            rew += self.path_track_reward(target_pos, 0.42, agent_pos)  # 弹性路径跟踪部分
+                rew += 8
+            rew += self.path_track_reward(target_pos, 0.15, agent_pos)  # 弹性路径跟踪部分
         y_abs = abs(dis_dir[0][1]) + abs(dis_dir[1][1])
         if y_abs < 0.1:
-            rew += 15
+            rew += 20
 
         return rew
 
@@ -160,10 +160,10 @@ class Scenario(BaseScenario):
         if distance < self.path_track_dis:
             rew += 1.0
         rew += f10"""
-        if distance < aim_dis:
-            rew += 20
+        if y_dis < aim_dis:
+            rew += 80
             rew -= abs(x_dis)
-        rew -= distance * 3
+        rew -= distance * 5
         return rew
 
     def observation(self, agent, world):

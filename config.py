@@ -14,7 +14,7 @@ def get_config():
     parser.add_argument("--scenario", type=str, default="formation_v1", help="定义要使用 MPE 中的哪个环境")
     parser.add_argument("--algo_name", type=str, default="ma-ddpg", help="算法名称")
     parser.add_argument("--device", type=str, default="cuda" if tf.test.is_gpu_available() else 'cpu', help="检测GPU")
-    parser.add_argument("--train_num", type=int, default=70000, help="训练的回合数")
+    parser.add_argument("--train_num", type=int, default=50000, help="训练的回合数")
 
     parser.add_argument("--max_episode_len", type=int, default=240, help="每回合的步数")
     parser.add_argument("--adversaries_num", type=int, default=0, help="环境中的对手数量")

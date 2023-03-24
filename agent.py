@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorflow.contrib.layers as layers
+import tf_slim.layers as layers
 from trainer.maddpg import MADDPGAgentTrainer
 
 

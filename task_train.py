@@ -127,6 +127,7 @@ def train(parameters):
                 break
             if parameters.use_wandb: wandb_run.wandb_log(train_info, len(episode_rewards))
 
+
 if __name__ == '__main__':
     parameter = config.get_config()
     train(parameter)
