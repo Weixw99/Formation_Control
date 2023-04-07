@@ -1,2 +1,2 @@
-model_checkpoint_path: "/home/wxw/Project/Formation_Control/models/formation_v1/1/"
-all_model_checkpoint_paths: "/home/wxw/Project/Formation_Control/models/formation_v1/1/"
+model_checkpoint_path: "/media/data1/project/Formation_Control/models/formation_v1/9/"
+all_model_checkpoint_paths: "/media/data1/project/Formation_Control/models/formation_v1/9/"

@@ -35,7 +35,7 @@ def get_config():
     # Evaluation
     parser.add_argument("--restore", action="store_true", default=False,
                         help='恢复存储在load-dir（或save-dir如果未load-dir 提供）中的先前训练状态，并继续训练')
-    parser.add_argument("--display", action="store_true", default=False,
+    parser.add_argument("--display", action="store_true", default=True,
                         help='在屏幕上显示存储在load-dir（或save-dir如果没有load-dir 提供）中的训练策略，但不继续训练')
     parser.add_argument("--benchmark", action="store_true", default=False,
                         help='对保存的策略运行基准评估，将结果保存到benchmark-dir文件夹')
