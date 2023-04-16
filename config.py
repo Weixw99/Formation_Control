@@ -37,8 +37,6 @@ def get_config():
                         help='恢复存储在load-dir（或save-dir如果未load-dir 提供）中的先前训练状态，并继续训练')
     parser.add_argument("--display", action="store_true", default=False,
                         help='在屏幕上显示存储在load-dir（或save-dir如果没有load-dir 提供）中的训练策略，但不继续训练')
-    parser.add_argument("--benchmark", action="store_true", default=False,
-                        help='对保存的策略运行基准评估，将结果保存到benchmark-dir文件夹')
     parser.add_argument("--benchmark_iter", type=int, default=100000, help="运行基准测试的迭代次数")
     parser.add_argument("--benchmark_dir", type=str, default="./benchmark_files/", help="保存基准数据的目录")
     parser.add_argument("--plots_dir", type=str, default="./learning_curves/", help="保存训练曲线的目录")
@@ -50,6 +48,7 @@ def get_config():
     # wandb
     parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
     args = parser.parse_args()
+    args.use_wandb = True if not args.display else False
     args.noise_std_decay = (args.noise_std_init - args.noise_std_min) / args.noise_decay_steps
     # tf.device(args.device)
     return args

@@ -11,9 +11,9 @@ import config
 class Runner:
     def __init__(self, parameters):
         self.parameters = parameters
-        util.single_threaded_session()  # 创建一个TensorFlow会话,确保TensorFlow运算的正确执行,同时避免了多线程环境下的竞争和不一致性问题。
+
         # 创建环境
-        self.env = make_env(parameters.scenario, parameters.benchmark)
+        self.env = make_env(parameters.scenario)
         # 创建agent
         obs_shape_n = [self.env.observation_space[i].shape for i in range(self.env.n)]
         adversaries_num = min(self.env.n, parameters.adversaries_num)
@@ -28,7 +28,7 @@ class Runner:
             os.makedirs(parameters.save_dir)
         total_files = len([file for file in os.listdir(parameters.save_dir)])
         # 判断是否加载上次训练好的模型,如果加载上次的模型查看效果，就读取上次的训练结果。
-        if parameters.display or parameters.restore or parameters.benchmark:
+        if parameters.display:
             if parameters.load_dir == "":
                 parameters.save_dir = os.path.join(parameters.save_dir, f'{total_files}' + '/')
                 parameters.load_dir = parameters.save_dir
@@ -39,7 +39,7 @@ class Runner:
             os.makedirs(parameters.save_dir)
         self.saver = tf.compat.v1.train.Saver()
 
-        if parameters.use_wandb and not parameters.display:
+        if parameters.use_wandb:
             self.wandb_run = config.MyWandb(parameters)
             self.wandb_run.wandb_init()
         self.episode_step = 0
@@ -93,25 +93,27 @@ class Runner:
                         train_info['%s/rew' % agent.name] = loss[3]
                         train_info['%s/target_q_next' % agent.name] = loss[4]
                         train_info['%s/target_q_sta' % agent.name] = loss[5]
-                # 保存模型，显示训练输出
-                if self.train_step % self.parameters.save_rate == 0:
-                    util.save_state(self.parameters.save_dir, saver=self.saver)
-                    # 打印状态
-                    print("episodes_steps: {}, train_steps: {}, mean reward: {}, agent reward: {}, time: {}".format(
-                            self.episode_step, self.train_step, np.mean(episode_rewards[-self.parameters.save_rate:]),
-                            [np.mean(rew[-self.parameters.save_rate:]) for rew in agent_rewards], round(time.time() - t_start, 3)))
-                    t_start = time.time()
-                    train_info['reward'] = np.mean(episode_rewards[-self.parameters.save_rate:])
-                    for i, rew in enumerate(agent_rewards):
-                        train_info['agent_%i/reward' % i] = np.mean(rew[-self.parameters.save_rate:])
-                    if self.parameters.use_wandb: self.wandb_run.wandb_log(train_info, len(episode_rewards))
+            # 保存模型，显示训练输出
+            if self.train_step % self.parameters.save_rate == 0 or self.parameters.display:
+                # 打印状态
+                print("episodes_steps: {}, train_steps: {}, mean reward: {}, agent reward: {}, time: {}".format(
+                        self.episode_step, self.train_step, np.mean(episode_rewards[-self.parameters.save_rate:]),
+                        [np.mean(rew[-self.parameters.save_rate:]) for rew in agent_rewards], round(time.time() - t_start, 3)))
+                t_start = time.time()
+                if self.parameters.display: continue
+                # save model
+                util.save_state(self.parameters.save_dir, saver=self.saver)
+                train_info['reward'] = np.mean(episode_rewards[-self.parameters.save_rate:])
+                for i, rew in enumerate(agent_rewards):
+                    train_info['agent_%i/reward' % i] = np.mean(rew[-self.parameters.save_rate:])
+                if self.parameters.use_wandb: self.wandb_run.wandb_log(train_info, len(episode_rewards))
 
-        # 保存最后回合的奖励，以便以后绘制训练曲线。
         print('Finished total of {} episodes.'.format(self.train_step))
         if self.parameters.use_wandb: self.wandb_run.wandb_finish()
 
 
 if __name__ == '__main__':
     parameter = config.get_config()
-    runner = Runner(parameter)
-    runner.run()
+    with util.single_threaded_session():  # 创建一个TensorFlow会话,确保TensorFlow运算的正确执行,同时避免了多线程环境下的竞争和不一致性问题。
+        runner = Runner(parameter)
+        runner.run()
