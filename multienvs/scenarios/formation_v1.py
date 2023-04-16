@@ -77,33 +77,27 @@ class Scenario(BaseScenario):
 
         if agent.name == "agent_0":  # 如果是虚拟领航者
             distance = self.calculate_distance(h0, l0)
-            if distance < 0.5:
-                rew += 2
-                if distance < 0.3:
-                    rew += 3
+            rew += 5*np.exp(-1.8*distance)
             rew -= distance
 
         elif agent.name == "agent_1":
             distance = self.calculate_distance(h1, h0)
-            if distance < 0.3:
-                rew += 2.5
-            rew -= distance * 1.5
+            rew += 2.5 * np.exp(-1.8 * distance)
+            rew -= distance * 1.2
             # 编队控制部分
             # rew += self.formation_reward(agent, world.agents[2], world.agents[3], world.agents[0])
 
         elif agent.name == "agent_2":
             distance = self.calculate_distance(h2, h0)
-            if distance < 0.3:
-                rew += 2.5
-            rew -= distance * 1.5
+            rew += 2.5 * np.exp(-1.8 * distance)
+            rew -= distance * 1.2
             # 编队控制部分
             # rew += self.formation_reward(agent, world.agents[1], world.agents[3], world.agents[0])
 
         elif agent.name == "agent_3":
             distance = self.calculate_distance(h3, h0)
-            if distance < 0.3:
-                rew += 2.5
-            rew -= distance * 1.5
+            rew += 2.5 * np.exp(-1.8 * distance)
+            rew -= distance * 1.2
             # 编队控制部分
             # rew += self.formation_reward(agent, world.agents[1], world.agents[2], world.agents[0])
         """distance0 = [self.calculate_distance(h0, h1), self.calculate_distance(h0, h2), self.calculate_distance(h0, h3)]

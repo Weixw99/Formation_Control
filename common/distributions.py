@@ -334,7 +334,7 @@ class DiagGaussianPd(Pd):
         return U.sum(self.logstd + .5 * np.log(2.0 * np.pi * np.e), 1)
 
     def sample(self):
-        return self.mean + self.std * tf.random_normal(tf.shape(self.mean))
+        return self.mean + self.std * tf.random.normal(tf.shape(self.mean))
     @classmethod
     def fromflat(cls, flat):
         return cls(flat)
