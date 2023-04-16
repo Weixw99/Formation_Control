@@ -11,7 +11,6 @@ import config
 class Runner:
     def __init__(self, parameters):
         self.parameters = parameters
-
         # 创建环境
         self.env = make_env(parameters.scenario)
         # 创建agent
@@ -23,7 +22,7 @@ class Runner:
         # 初始化
         util.initialize()  # 确保所有的变量都已经被正确地初始化。
         # 判断是否加载上次训练好的模型,如果加载上次的模型查看效果，就读取上次的训练结果。
-        if parameters.display:
+        if parameters.evaluate:
             print('Loading previous state...')
             util.load_state(parameters.load_dir)  # 加载模型
         else:  # 如果训练代码，则在环境文件下创建新的文件存放网络参数
@@ -36,6 +35,7 @@ class Runner:
             self.wandb_run.wandb_init()
         self.episode_step = 0
         self.train_step = 0
+        self.noise_std = self.args.noise_std_init if not args.evaluate else 0
 
     def run(self):
         episode_rewards = []  # sum of rewards for all agents
@@ -49,7 +49,12 @@ class Runner:
             episode_rewards.append(0)
             for a in agent_rewards: a.append(0)
             obs_n = self.env.reset()
-
+            if not self.parameters.evaluate:
+                for agent in self.env.agents:
+                    agent.u_noise = self.noise_std
+                # Decay noise_std(衰减噪音)
+                if self.parameters.use_noise_decay:
+                    self.noise_std = self.noise_std - self.parameters.noise_std_decay if self.noise_std - self.parameters.noise_std_decay > self.parameters.noise_std_min else self.parameters.noise_std_min
             for _ in range(self.parameters.max_episode_len):
                 # 获取action
                 action_n = [agent.action(obs) for agent, obs in zip(self.trainers, obs_n)]
@@ -69,7 +74,7 @@ class Runner:
                     episode_rewards[-1] += rew
                     agent_rewards[i][-1] += rew
                 # 显示
-                if self.parameters.display:
+                if self.parameters.evaluate:
                     time.sleep(0.1)
                     self.env.render()
                     continue
@@ -86,13 +91,13 @@ class Runner:
                         train_info['%s/target_q_next' % agent.name] = loss[4]
                         train_info['%s/target_q_sta' % agent.name] = loss[5]
             # 保存模型，显示训练输出
-            if self.train_step % self.parameters.save_rate == 0 or self.parameters.display:
+            if self.train_step % self.parameters.save_rate == 0 or self.parameters.evaluate:
                 # 打印状态
                 print("episodes_steps: {}, train_steps: {}, mean reward: {}, agent reward: {}, time: {}".format(
                         self.episode_step, self.train_step, np.mean(episode_rewards[-self.parameters.save_rate:]),
                         [np.mean(rew[-self.parameters.save_rate:]) for rew in agent_rewards], round(time.time() - t_start, 3)))
                 t_start = time.time()
-                if self.parameters.display: continue
+                if self.parameters.evaluate: continue
                 # save model
                 util.save_state(self.parameters.save_dir, saver=self.saver)
                 train_info['reward'] = np.mean(episode_rewards[-self.parameters.save_rate:])

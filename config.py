@@ -30,11 +30,10 @@ def get_config():
     # Checkpointing
     parser.add_argument("--exp_name", type=str, default='maddpg_formation', help="实验名称，用作保存所有结果的文件名")
     parser.add_argument("--save_rate", type=int, default=10, help="每次完成此数量的训练时都会保存模型")
-    parser.add_argument("--load_dir", type=str, default="", help="从中加载训练状态和模型的目录")
     # Evaluation
     parser.add_argument("--restore", action="store_true", default=False,
                         help='恢复存储在load-dir（或save-dir如果未load-dir 提供）中的先前训练状态，并继续训练')
-    parser.add_argument("--display", action="store_true", default=False,
+    parser.add_argument("--evaluate", action="store_true", default=False,
                         help='在屏幕上显示存储在load-dir（或save-dir如果没有load-dir 提供）中的训练策略，但不继续训练')
 
     parser.add_argument("--noise_std_init", type=float, default=0.2, help="探索的高斯噪音标准")
