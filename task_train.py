@@ -22,22 +22,14 @@ class Runner:
 
         # 初始化
         util.initialize()  # 确保所有的变量都已经被正确地初始化。
-
-        parameters.save_dir = os.path.join(parameters.save_dir, parameters.scenario)
-        if not os.path.exists(parameters.save_dir):
-            os.makedirs(parameters.save_dir)
-        total_files = len([file for file in os.listdir(parameters.save_dir)])
         # 判断是否加载上次训练好的模型,如果加载上次的模型查看效果，就读取上次的训练结果。
         if parameters.display:
-            if parameters.load_dir == "":
-                parameters.save_dir = os.path.join(parameters.save_dir, f'{total_files}' + '/')
-                parameters.load_dir = parameters.save_dir
             print('Loading previous state...')
             util.load_state(parameters.load_dir)  # 加载模型
         else:  # 如果训练代码，则在环境文件下创建新的文件存放网络参数
-            parameters.save_dir = os.path.join(parameters.save_dir, f'{total_files + 1}' + '/')
-            os.makedirs(parameters.save_dir)
-        self.saver = tf.compat.v1.train.Saver()
+            if not os.path.exists(parameters.save_dir):
+                os.makedirs(parameters.save_dir)
+            self.saver = tf.compat.v1.train.Saver()
 
         if parameters.use_wandb:
             self.wandb_run = config.MyWandb(parameters)
