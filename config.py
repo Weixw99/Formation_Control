@@ -43,7 +43,7 @@ def get_config():
     # wandb
     parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
     args = parser.parse_args()
-    args.use_wandb = True if not args.display else False
+    args.use_wandb = True if not args.evaluate else False
     args.noise_std_decay = (args.noise_std_init - args.noise_std_min) / args.noise_decay_steps
     args.save_dir = os.path.join(curr_path, f'models/{args.scenario}')
     args.model_files_num = len([file for file in os.listdir(args.save_dir)])

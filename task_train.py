@@ -35,7 +35,7 @@ class Runner:
             self.wandb_run.wandb_init()
         self.episode_step = 0
         self.train_step = 0
-        self.noise_std = self.args.noise_std_init if not args.evaluate else 0
+        self.noise_std = self.parameters.noise_std_init if not parameters.evaluate else 0
 
     def run(self):
         episode_rewards = []  # sum of rewards for all agents
