@@ -113,8 +113,7 @@ class Scenario(BaseScenario):
         for other in world.entities:
             if other is agent or other is world.landmarks[0]:
                 continue
-            elif self.is_collision(agent, other):
-                rew -= 2
+            rew -= self.is_collision(agent, other)
         return rew
 
     def formation_reward(self, agent, other1, other2, target):
@@ -181,11 +180,16 @@ class Scenario(BaseScenario):
         # 返回一个包含所有实体在该智能体参考框架中的位置、所有实体的颜色信息以及其他所有智能体之间的通信信息的观测向量
         return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm)  # 拼接数组
 
-    def is_collision(self, agent1, agent2):
+    def is_collision(self, agent1, agent2):  # 返回碰撞级别,级别对应惩罚值
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         dist_min = agent1.size + agent2.size
-        return True if dist < dist_min else False
+        if dist_min < dist < dist_min * 3 / 2:
+            return 0.5
+        elif 0 < dist < dist_min:
+            return 2.5
+        else:
+            return 0
 
     def calculate_distance(self, pos1, pos2):
         delta_pos = pos1 - pos2
