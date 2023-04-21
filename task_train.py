@@ -25,10 +25,12 @@ class Runner:
         if parameters.evaluate:
             print('Loading previous state...')
             util.load_state(parameters.load_dir)  # 加载模型
+            print(f"load_dir:{parameters.load_dir}")
         else:  # 如果训练代码，则在环境文件下创建新的文件存放网络参数
             if not os.path.exists(parameters.save_dir):
                 os.makedirs(parameters.save_dir)
             self.saver = tf.compat.v1.train.Saver()
+            print(f"save_dir:{parameters.save_dir}")
 
         if parameters.use_wandb:
             self.wandb_run = config.MyWandb(parameters)

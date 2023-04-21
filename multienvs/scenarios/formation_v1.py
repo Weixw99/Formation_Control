@@ -113,7 +113,8 @@ class Scenario(BaseScenario):
         for other in world.entities:
             if other is agent or other is world.landmarks[0]:
                 continue
-            rew -= self.is_collision(agent, other)
+            if self.is_collision(agent, other):
+                rew -= 2
         return rew
 
     def formation_reward(self, agent, other1, other2, target):
@@ -183,13 +184,8 @@ class Scenario(BaseScenario):
     def is_collision(self, agent1, agent2):  # 返回碰撞级别,级别对应惩罚值
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
-        dist_min = agent1.size + agent2.size
-        if dist_min < dist < dist_min * 3 / 2:
-            return 0.5
-        elif 0 < dist < dist_min:
-            return 2.5
-        else:
-            return 0
+        dist_min = agent1.size + agent2.size + 0.1
+        return True if dist_min > dist else False
 
     def calculate_distance(self, pos1, pos2):
         delta_pos = pos1 - pos2
