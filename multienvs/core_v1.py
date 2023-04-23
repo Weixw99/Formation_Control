@@ -73,6 +73,8 @@ class Agent(Entity):
         self.u_noise = None
         # 通信噪声量
         self.c_noise = None
+        # apf噪声
+        self.apf_noise = None
         # 控制范围
         self.u_range = 1.0
         # 状态（state）
@@ -142,7 +144,7 @@ class World(object):
         for i, agent in enumerate(self.agents):
             if agent.movable:
                 noise = np.random.randn(*agent.action.u.shape) * agent.u_noise if agent.u_noise else 0.0
-                p_force[i] = agent.action.u + noise
+                p_force[i] = agent.action.u + noise + agent.apf_noise
         return p_force
 
     # 收集作用于实体的物理力量

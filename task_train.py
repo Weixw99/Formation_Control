@@ -6,6 +6,7 @@ import os
 import common.utils as util
 from agent import make_env, get_trainers
 import config
+import APF
 
 
 class Runner:
@@ -39,6 +40,7 @@ class Runner:
         self.train_step = 0
         self.noise_std = self.parameters.noise_std_init if not parameters.evaluate else 0
 
+
     def run(self):
         episode_rewards = []  # sum of rewards for all agents
         agent_rewards = [[] for _ in range(self.env.n)]  # individual agent reward
@@ -51,6 +53,9 @@ class Runner:
             episode_rewards.append(0)
             for a in agent_rewards: a.append(0)
             obs_n = self.env.reset()
+            if self.parameters.use_apf:
+                self.parameters.apf_noise -= self.parameters.apf_noise_decay if self.parameters.apf_noise > 0 else 0
+                apf = APF.MyAPF(self.env.world.agents, self.env.world.landmarks)
             if not self.parameters.evaluate:
                 for agent in self.env.agents:
                     agent.u_noise = self.noise_std
@@ -58,6 +63,10 @@ class Runner:
                 if self.parameters.use_noise_decay:
                     self.noise_std = self.noise_std - self.parameters.noise_std_decay if self.noise_std - self.parameters.noise_std_decay > self.parameters.noise_std_min else self.parameters.noise_std_min
             for _ in range(self.parameters.max_episode_len):
+                # 获取apf的力
+                if self.parameters.use_apf:
+                    for agent, obs in zip(self.trainers, obs_n):
+                        agent.apf_noise = apf.compute_force(agent, obs)*self.parameters.apf_noise
                 # 获取action
                 action_n = [agent.action(obs) for agent, obs in zip(self.trainers, obs_n)]
                 # step

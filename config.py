@@ -42,9 +42,16 @@ def get_config():
     parser.add_argument("--use_noise_decay", type=bool, default=True, help="Whether to decay the noise_std")
     # wandb
     parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
+    # apf
+    parser.add_argument("--use_apf", action='store_false', default=False, help="是否使用APF（人工势场算法）")
+    parser.add_argument("--apf_noise", type=int, default=0.1, help="初始噪声值")
+    parser.add_argument("--apf_decay_steps", type=int, default=10000, help="使用apf步数")
+
     args = parser.parse_args()
     args.use_wandb = True if not args.evaluate else False
     args.noise_std_decay = (args.noise_std_init - args.noise_std_min) / args.noise_decay_steps
+    args.apf_noise_decay = (args.apf_noise - 0) / args.apf_decay_steps
+
     args.save_dir = os.path.join(curr_path, f'models/{args.scenario}')
     args.model_files_num = len([file for file in os.listdir(args.save_dir)])
     args.load_dir = os.path.join(args.save_dir, f'{args.model_files_num}/')
