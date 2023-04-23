@@ -26,7 +26,7 @@ class Scenario(BaseScenario):
             agent.name = 'agent_%d' % i
             agent.collide = True
             agent.silent = True
-            agent.size = 0.15
+            agent.size = 0.08  # 虚拟领航者的半径（实际是0.06，render中-0.02），跟随者的船体长0.08，宽0.05
         # 单独对虚拟领航者设置
         world.agents[0].collide = False  # 设置成不可碰撞
 
@@ -37,6 +37,7 @@ class Scenario(BaseScenario):
             landmark.name = 'landmark %d' % i
             landmark.collide = True
             landmark.movable = False
+            landmark.size = 0.1  # 两个障碍物的尺寸（半径）目标点也是这个尺寸
         world.landmarks[0].collide = False
         # 设置初始条件
         self.reset_world(world)
@@ -108,13 +109,14 @@ class Scenario(BaseScenario):
         self.path_track_k = 0.8
 """
         # 障碍规避部分
-        if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
-            rew -= 2
-        for other in world.entities:
-            if other is agent or other is world.landmarks[0]:
-                continue
-            if self.is_collision(agent, other):
+        if agent.collide:
+            if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
                 rew -= 2
+            for other in world.entities:
+                if other is agent or other is world.landmarks[0]:
+                    continue
+                if self.is_collision(agent, other):
+                    rew -= 2
         return rew
 
     def formation_reward(self, agent, other1, other2, target):
@@ -184,7 +186,7 @@ class Scenario(BaseScenario):
     def is_collision(self, agent1, agent2):  # 返回碰撞级别,级别对应惩罚值
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
-        dist_min = agent1.size + agent2.size + 0.1
+        dist_min = agent1.size + agent2.size + 0.06
         return True if dist_min > dist else False
 
     def calculate_distance(self, pos1, pos2):

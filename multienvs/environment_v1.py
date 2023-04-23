@@ -229,12 +229,14 @@ class MultiAgentEnv(gym.Env):
 
             for i, agent in enumerate(self.world.agents):
                 if i == 0:  # 对虚拟领航点设置
-                    geom = rendering.make_circle(agent.size/2.5)
+                    geom = rendering.make_circle(agent.size - 0.02)
                 else:  # 对三艘船进行设置
                     boat_width = 0.05
                     boat_height = 0.06
+                    bias = 0.04
                     l, r, t, b = -boat_width / 2, boat_width / 2, boat_height, 0
-                    geom = rendering.FilledPolygon([(l, b), (l, t), (0, 0.08), (r, t), (r, b)])
+                    geom = rendering.FilledPolygon(
+                        [(l, b - bias), (l, t - bias), (0, 0.08 - bias), (r, t - bias), (r, b - bias)])
                 xform = rendering.Transform()
                 geom.set_color(*agent.color, alpha=0.5)
                 geom.add_attr(xform)
@@ -243,11 +245,11 @@ class MultiAgentEnv(gym.Env):
 
             for i, landmark in enumerate(self.world.landmarks):
                 if i == 0:  # 目标点设置为三角形
-                    triangle_size = 0.08
-                    l, r, t, b = -triangle_size / 2, triangle_size / 2, triangle_size, 0
-                    geom = rendering.FilledPolygon([(l, b), (0, t), (r, b)])
+                    circle = landmark.size / 2
+                    l, r, t, b = 0.086 / 2, circle / 2, circle, 0
+                    geom = rendering.FilledPolygon([(-l, -r), (b, t), (l, -r)])
                 else:
-                    geom = rendering.make_circle(landmark.size*2)
+                    geom = rendering.make_circle(landmark.size)
                 xform = rendering.Transform()
                 geom.set_color(*landmark.color)
                 geom.add_attr(xform)
