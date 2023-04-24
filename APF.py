@@ -22,7 +22,7 @@ class MyAPF:
             [[obs[10], obs[11]], [obs[12], obs[13]], [obs[14], obs[15]]]) * -1  # agent和其他agent的坐标差，other - agent
         global_target_point = np.array([obs[4], obs[5]])  # 对于agent0来说，使用全局目标点，方向指向目标点
         local_target_point = np.array([obs[10], obs[11]])  # 对于其他agent来说，将agent0作为目标点，方向指向目标点
-        if agent.agent_id == 0:
+        if agent.name == 'agent_0':
             attract_force = self.compute_attract(global_target_point)
             repulsion_force = np.zeros(2)
         else:

@@ -65,7 +65,7 @@ class Runner:
             for _ in range(self.parameters.max_episode_len):
                 # 获取apf的力
                 if self.parameters.use_apf:
-                    for agent, obs in zip(self.trainers, obs_n):
+                    for agent, obs in zip(self.env.world.policy_agents, obs_n):
                         agent.apf_noise = apf.compute_force(agent, obs)*self.parameters.apf_noise
                 # 获取action
                 action_n = [agent.action(obs) for agent, obs in zip(self.trainers, obs_n)]
