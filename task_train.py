@@ -13,7 +13,7 @@ class Runner:
     def __init__(self, parameters):
         self.parameters = parameters
         # 创建环境
-        self.env = make_env(parameters.scenario)
+        self.env = make_env(parameters, parameters.scenario)
         # 创建agent
         obs_shape_n = [self.env.observation_space[i].shape for i in range(self.env.n)]
         adversaries_num = min(self.env.n, parameters.adversaries_num)
@@ -40,16 +40,16 @@ class Runner:
         self.train_step = 0
         self.noise_std = self.parameters.noise_std_init if not parameters.evaluate else 0
 
-
     def run(self):
         episode_rewards = []  # sum of rewards for all agents
         agent_rewards = [[] for _ in range(self.env.n)]  # individual agent reward
 
         print('Starting iterations...')
         t_start = time.time()
-        while self.train_step < self.parameters.train_num:
+        while self.train_step < self.parameters.max_train_num:
             train_info = {}
             self.train_step += 1
+            self.parameters.train_step = self.train_step
             episode_rewards.append(0)
             for a in agent_rewards: a.append(0)
             obs_n = self.env.reset()

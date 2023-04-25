@@ -14,7 +14,8 @@ def get_config():
     parser.add_argument("--scenario", type=str, default="formation_v1", help="定义要使用 MPE 中的哪个环境")
     parser.add_argument("--algo_name", type=str, default="ma-ddpg", help="算法名称")
     parser.add_argument("--device", type=str, default="/gpu:0" if tf.test.is_gpu_available() else 'cpu', help="检测GPU")
-    parser.add_argument("--train_num", type=int, default=100000, help="训练的回合数")
+    parser.add_argument("--train_step", type=int, default=0, help="训练的回合数")
+    parser.add_argument("--max_train_num", type=int, default=100000, help="训练的最大回合数")
 
     parser.add_argument("--max_episode_len", type=int, default=240, help="每回合的步数")
     parser.add_argument("--adversaries_num", type=int, default=0, help="环境中的对手数量")
@@ -43,7 +44,7 @@ def get_config():
     # wandb
     parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
     # apf
-    parser.add_argument("--use_apf", action='store_false', default=True, help="是否使用APF（人工势场算法）")
+    parser.add_argument("--use_apf", action='store_false', default=False, help="是否使用APF（人工势场算法）")
     parser.add_argument("--apf_noise", type=int, default=0.1, help="初始噪声值")
     parser.add_argument("--apf_decay_steps", type=int, default=10000, help="使用apf步数")
 

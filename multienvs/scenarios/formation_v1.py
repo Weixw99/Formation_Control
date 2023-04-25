@@ -12,8 +12,9 @@ class Scenario(BaseScenario):
         self.path_track_dis = None
         self.path_track_k = None
 
-    def make_world(self):
+    def make_world(self, parameters):
         world = World()
+        world.parameters = parameters
         # 先设置世界属性
         world.dim_c = 2  # 通信通道维度
         num_agents = 4  # 设置了三艘船和一个虚拟领航点
@@ -70,44 +71,39 @@ class Scenario(BaseScenario):
     def reward(self, agent, world):
         rew = 0
         # 每个agent的位置
-        h0 = world.agents[0].state.p_pos
-        h1 = world.agents[1].state.p_pos
-        h2 = world.agents[2].state.p_pos
-        h3 = world.agents[3].state.p_pos
+        aa = agent.state.p_pos
+        a0 = world.agents[0].state.p_pos
+        a1 = world.agents[1].state.p_pos
+        a2 = world.agents[2].state.p_pos
+        a3 = world.agents[3].state.p_pos
         l0 = world.landmarks[0].state.p_pos
+        if world.parameters.train_step < 5000:  # 第一级层级强化学习:学习编队
+            if a1[1] < a0[1] and a2[1] < a0[1] and a2[1] < a0[1]:  # 保持三艘船跟在虚拟领航者后面
+                rew += 1
+            other_gent = [other for other in world.agents if other is not agent and other is not world.agents[0]]
+            rew += self.formation_reward(agent, other_gent[0], other_gent[1])
+        else:
+            world.parameters.use_apf = True
+            if agent.name == "agent_0":  # 如果是虚拟领航者
+                distance = self.calculate_distance(a0, l0)
+                rew += 5 * np.exp(-1.8 * distance)
+                rew -= distance
 
-        if agent.name == "agent_0":  # 如果是虚拟领航者
-            distance = self.calculate_distance(h0, l0)
-            rew += 5*np.exp(-1.8*distance)
-            rew -= distance
+            elif agent.name == "agent_1":
+                distance = self.calculate_distance(a1, a0)
+                rew += 2.5 * np.exp(-1.8 * distance)
+                rew -= distance * 1.2
 
-        elif agent.name == "agent_1":
-            distance = self.calculate_distance(h1, h0)
-            rew += 2.5 * np.exp(-1.8 * distance)
-            rew -= distance * 1.2
-            # 编队控制部分
-            # rew += self.formation_reward(agent, world.agents[2], world.agents[3], world.agents[0])
+            elif agent.name == "agent_2":
+                distance = self.calculate_distance(a2, a0)
+                rew += 2.5 * np.exp(-1.8 * distance)
+                rew -= distance * 1.2
 
-        elif agent.name == "agent_2":
-            distance = self.calculate_distance(h2, h0)
-            rew += 2.5 * np.exp(-1.8 * distance)
-            rew -= distance * 1.2
-            # 编队控制部分
-            # rew += self.formation_reward(agent, world.agents[1], world.agents[3], world.agents[0])
+            elif agent.name == "agent_3":
+                distance = self.calculate_distance(a3, a0)
+                rew += 2.5 * np.exp(-1.8 * distance)
+                rew -= distance * 1.2
 
-        elif agent.name == "agent_3":
-            distance = self.calculate_distance(h3, h0)
-            rew += 2.5 * np.exp(-1.8 * distance)
-            rew -= distance * 1.2
-            # 编队控制部分
-            # rew += self.formation_reward(agent, world.agents[1], world.agents[2], world.agents[0])
-        """distance0 = [self.calculate_distance(h0, h1), self.calculate_distance(h0, h2), self.calculate_distance(h0, h3)]
-        distance = [self.calculate_distance(h1, h2), self.calculate_distance(h1, h3), self.calculate_distance(h2, h3)]
-        self.formation_dis = 0.1  # 编队期望距离
-        self.formation_k = 0.8  # 编队弹性连接力系数
-        self.path_track_dis = 0.2  # 弹性路径跟踪期望距离
-        self.path_track_k = 0.8
-"""
         # 障碍规避部分
         if agent.collide:
             if self.is_collision(agent, world.landmarks[1]) or self.is_collision(agent, world.landmarks[2]):
@@ -119,50 +115,29 @@ class Scenario(BaseScenario):
                     rew -= 2
         return rew
 
-    def formation_reward(self, agent, other1, other2, target):
+    def formation_reward(self, agent, other1, other2):  # 三艘船并列跟踪虚拟领航者
         rew = 0
         agent_pos = agent.state.p_pos
         other1_pos = other1.state.p_pos
         other2_pos = other2.state.p_pos
-        target_pos = target.state.p_pos
-        dis_dir = [agent_pos - other1_pos, agent_pos - other2_pos, target_pos - agent_pos]
-        distance = [self.calculate_distance(agent_pos, other1_pos), self.calculate_distance(agent_pos, other2_pos), self.calculate_distance(agent_pos, target_pos)]
+        dis_dir = [agent_pos - other1_pos, agent_pos - other2_pos]
+        distance = [self.calculate_distance(agent_pos, other1_pos), self.calculate_distance(agent_pos, other2_pos)]
+        # 判断当前agent所处的位置
         if dis_dir[0][0] * dis_dir[1][0] < 0:  # 判断agent是否在两船中间
             if distance[0] < 0.3 and distance[1] < 0.3:
                 rew += 1
             else:
                 rew -= distance[0]*2 + distance[1]*2
-            # 弹性路径跟踪部分
-            if 0.05 < dis_dir[2][1] < 0.3 and abs(dis_dir[2][0]) < 0.08:
-                rew += 8
-                rew -= abs(dis_dir[2][0]) * 0.2
-            rew -= distance[2] * 0.8
-        else:  # agent1在编队两侧
-            if distance[0] < distance[1] and distance[0] < 0.3:
+        else:  # agent在编队两侧
+            if distance[0] <= distance[1] and distance[0] < 0.3:
                 rew += 1
             elif distance[0] > distance[1] and distance[1] < 0.3:
                 rew += 1
             else:
                 rew -= 1
-            # 弹性路径跟踪部分
-            if 0.05 < dis_dir[2][1] < 0.3 and abs(dis_dir[2][0]) < 0.3:
-                rew += 8
-                rew -= (abs(dis_dir[2][0]) - 0.3) * 0.2
-            rew -= distance[2] * 0.8
         y_abs = abs(dis_dir[0][1]) + abs(dis_dir[1][1])
         if y_abs < 0.1:
             rew += 2
-        return rew
-
-    def path_track_reward(self, target, aim_dis, agent_pos):
-        rew = 0
-        distance = self.calculate_distance(agent_pos, target)
-        y_dis = target[1] - agent_pos[1]
-        x_dis = target[0] - agent_pos[0]
-        if 0.05 < y_dis < aim_dis:
-            rew += 10
-            rew -= abs(x_dis)
-        rew -= distance * 0.8
         return rew
 
     def observation(self, agent, world):
