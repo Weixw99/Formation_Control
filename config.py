@@ -44,7 +44,7 @@ def get_config():
     # wandb
     parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
     # apf
-    parser.add_argument("--use_apf", action='store_false', default=False, help="是否使用APF（人工势场算法）")
+    parser.add_argument("--use_apf", action='store_false', default=True, help="是否使用APF（人工势场算法）")
     parser.add_argument("--apf_noise", type=int, default=0.1, help="初始噪声值")
     parser.add_argument("--apf_decay_steps", type=int, default=10000, help="使用apf步数")
 
