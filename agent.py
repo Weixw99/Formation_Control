@@ -3,7 +3,7 @@ import tf_slim.layers as layers
 from trainer.maddpg import MADDPGAgentTrainer
 
 
-def make_env(parameters, scenario_name):
+def make_env(scenario_name):
     # 用于将多代理环境导入为类似 OpenAI Gym 的对象的代码
     from multienvs.environment_v1 import MultiAgentEnv
     import multienvs.scenarios as scenarios
@@ -11,7 +11,7 @@ def make_env(parameters, scenario_name):
     # load scenario from script
     scenario = scenarios.load(scenario_name + ".py").Scenario()
     # create world
-    world = scenario.make_world(parameters)  # 创建agent和landmark赋予各种类
+    world = scenario.make_world()  # 创建agent和landmark赋予各种类
     # create multi-agent environment
     env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
     return env

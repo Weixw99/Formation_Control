@@ -13,7 +13,7 @@ class Runner:
     def __init__(self, parameters):
         self.parameters = parameters
         # 创建环境
-        self.env = make_env(parameters, parameters.scenario)
+        self.env = make_env(parameters.scenario)
         # 创建agent
         obs_shape_n = [self.env.observation_space[i].shape for i in range(self.env.n)]
         adversaries_num = min(self.env.n, parameters.adversaries_num)

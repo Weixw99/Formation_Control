@@ -12,9 +12,8 @@ class Scenario(BaseScenario):
         self.path_track_dis = None
         self.path_track_k = None
 
-    def make_world(self, parameters):
+    def make_world(self):
         world = World()
-        world.parameters = parameters
         # 先设置世界属性
         world.dim_c = 2  # 通信通道维度
         num_agents = 4  # 设置了三艘船和一个虚拟领航点
@@ -77,32 +76,25 @@ class Scenario(BaseScenario):
         a2 = world.agents[2].state.p_pos
         a3 = world.agents[3].state.p_pos
         l0 = world.landmarks[0].state.p_pos
-        if world.parameters.train_step < 5000:  # 第一级层级强化学习:学习编队
-            if a1[1] < a0[1] and a2[1] < a0[1] and a2[1] < a0[1]:  # 保持三艘船跟在虚拟领航者后面
-                rew += 1
-            other_gent = [other for other in world.agents if other is not agent and other is not world.agents[0]]
-            rew += self.formation_reward(agent, other_gent[0], other_gent[1])
-        else:
-            world.parameters.use_apf = True
-            if agent.name == "agent_0":  # 如果是虚拟领航者
-                distance = self.calculate_distance(a0, l0)
-                rew += 5 * np.exp(-1.8 * distance)
-                rew -= distance
+        if agent.name == "agent_0":  # 如果是虚拟领航者
+            distance = self.calculate_distance(a0, l0)
+            rew += 5 * np.exp(-1.8 * distance)
+            rew -= distance
 
-            elif agent.name == "agent_1":
-                distance = self.calculate_distance(a1, a0)
-                rew += 2.5 * np.exp(-1.8 * distance)
-                rew -= distance * 1.2
+        elif agent.name == "agent_1":
+            distance = self.calculate_distance(a1, a0)
+            rew += 2.5 * np.exp(-1.8 * distance)
+            rew -= distance * 1.2
 
-            elif agent.name == "agent_2":
-                distance = self.calculate_distance(a2, a0)
-                rew += 2.5 * np.exp(-1.8 * distance)
-                rew -= distance * 1.2
+        elif agent.name == "agent_2":
+            distance = self.calculate_distance(a2, a0)
+            rew += 2.5 * np.exp(-1.8 * distance)
+            rew -= distance * 1.2
 
-            elif agent.name == "agent_3":
-                distance = self.calculate_distance(a3, a0)
-                rew += 2.5 * np.exp(-1.8 * distance)
-                rew -= distance * 1.2
+        elif agent.name == "agent_3":
+            distance = self.calculate_distance(a3, a0)
+            rew += 2.5 * np.exp(-1.8 * distance)
+            rew -= distance * 1.2
 
         # 障碍规避部分
         if agent.collide:
