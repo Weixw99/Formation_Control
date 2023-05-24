@@ -13,9 +13,9 @@ def get_config():
     # Environment
     parser.add_argument("--scenario", type=str, default="formation_v1", help="定义要使用 MPE 中的哪个环境")
     parser.add_argument("--algo_name", type=str, default="ma-ddpg", help="算法名称")
-    parser.add_argument("--device", type=str, default="/gpu:0" if tf.test.is_gpu_available() else 'cpu', help="检测GPU")
+    parser.add_argument("--device", type=str, default="/GPU:1" if tf.test.is_gpu_available() else 'cpu', help="检测GPU")
     parser.add_argument("--train_step", type=int, default=0, help="训练的回合数")
-    parser.add_argument("--max_train_num", type=int, default=100000, help="训练的最大回合数")
+    parser.add_argument("--max_train_num", type=int, default=50000, help="训练的最大回合数")
 
     parser.add_argument("--max_episode_len", type=int, default=240, help="每回合的步数")
     parser.add_argument("--adversaries_num", type=int, default=0, help="环境中的对手数量")
@@ -37,7 +37,7 @@ def get_config():
     parser.add_argument("--evaluate", action="store_true", default=False,
                         help='在屏幕上显示存储在load-dir（或save-dir如果没有load-dir 提供）中的训练策略，但不继续训练')
 
-    parser.add_argument("--noise_std_init", type=float, default=0.2, help="探索的高斯噪音标准")
+    parser.add_argument("--noise_std_init", type=float, default=0.1, help="探索的高斯噪音标准")
     parser.add_argument("--noise_std_min", type=float, default=0.05, help="探索的高斯噪音标准")
     parser.add_argument("--noise_decay_steps", type=float, default=10000, help="在 noise_std 衰减到最小值之前有多少步")
     parser.add_argument("--use_noise_decay", type=bool, default=True, help="Whether to decay the noise_std")
@@ -45,8 +45,8 @@ def get_config():
     parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
     # apf
     parser.add_argument("--use_apf", action='store_false', default=True, help="是否使用APF（人工势场算法）")
-    parser.add_argument("--apf_noise", type=int, default=0.1, help="初始噪声值")
-    parser.add_argument("--apf_decay_steps", type=int, default=10000, help="使用apf步数")
+    parser.add_argument("--apf_noise", type=int, default=0.2, help="初始噪声值")
+    parser.add_argument("--apf_decay_steps", type=int, default=20000, help="使用apf步数")
 
     args = parser.parse_args()
     args.use_wandb = True if not args.evaluate else False
@@ -68,7 +68,7 @@ class MyWandb:
         self.project_name = 'maddpg_formation'
         self.wandb_user_name = 'weixw99'
         self.pa_name = socket.gethostname()
-        self.exp_name = "drl"+"_train_num: " + str(parameters.max_train_num)
+        self.exp_name = "linear"+"_train_num: " + str(parameters.max_train_num)
         self.group_name = parameters.scenario
         self.wandb_dir = str(parameters.save_dir)
 
