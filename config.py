@@ -15,7 +15,7 @@ def get_config():
     parser.add_argument("--algo_name", type=str, default="ma-ddpg", help="算法名称")
     parser.add_argument("--device", type=str, default="/gpu:0" if tf.test.is_gpu_available() else 'cpu', help="检测GPU")
     parser.add_argument("--train_step", type=int, default=0, help="训练的回合数")
-    parser.add_argument("--max_train_num", type=int, default=100000, help="训练的最大回合数")
+    parser.add_argument("--max_train_num", type=int, default=50000, help="训练的最大回合数")
 
     parser.add_argument("--max_episode_len", type=int, default=240, help="每回合的步数")
     parser.add_argument("--adversaries_num", type=int, default=0, help="环境中的对手数量")
@@ -44,9 +44,9 @@ def get_config():
     # wandb
     parser.add_argument("--use_wandb", action='store_false', default=True, help="[for wandb usage]")
     # apf
-    parser.add_argument("--use_apf", action='store_false', default=True, help="是否使用APF（人工势场算法）")
-    parser.add_argument("--apf_noise", type=int, default=0.1, help="初始噪声值")
-    parser.add_argument("--apf_decay_steps", type=int, default=10000, help="使用apf步数")
+    parser.add_argument("--use_apf", action='store_false', default=False, help="是否使用APF（人工势场算法）")
+    parser.add_argument("--apf_noise", type=int, default=0.2, help="初始噪声值")
+    parser.add_argument("--apf_decay_steps", type=int, default=20000, help="使用apf步数")
 
     args = parser.parse_args()
     args.use_wandb = True if not args.evaluate else False
@@ -68,7 +68,7 @@ class MyWandb:
         self.project_name = 'maddpg_formation'
         self.wandb_user_name = 'weixw99'
         self.pa_name = socket.gethostname()
-        self.exp_name = "drl"+"_train_num: " + str(parameters.max_train_num)
+        self.exp_name = "triangular "+"_train_num: " + str(parameters.max_train_num)
         self.group_name = parameters.scenario
         self.wandb_dir = str(parameters.save_dir)
 
