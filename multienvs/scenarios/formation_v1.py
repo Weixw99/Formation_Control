@@ -37,7 +37,7 @@ class Scenario(BaseScenario):
             landmark.name = 'landmark %d' % i
             landmark.collide = True
             landmark.movable = False
-            landmark.size = 0.1  # 两个障碍物的尺寸（半径）目标点也是这个尺寸
+            landmark.size = 0.2  # 两个障碍物的尺寸（半径）目标点也是这个尺寸
         world.landmarks[0].collide = False
         # 设置初始条件
         self.reset_world(world)
@@ -50,20 +50,20 @@ class Scenario(BaseScenario):
             elif i == 1: agent.color = np.array([0.99, 0.38, 0.28])  # 粉色
             elif i == 2: agent.color = np.array([0.59, 0.98, 0.59])  # 绿色
             elif i == 3: agent.color = np.array([0, 0.65, 0.99])  # 蓝色
-            agent.state.p_pos = np.array([np.random.uniform(-1, 1), np.random.uniform(-0.7, -0.9)])
+            agent.state.p_pos = np.array([np.random.uniform(-1, 1), np.random.uniform(-0.2, 0.2)])
             agent.state.p_vel = np.zeros(world.dim_p)
             agent.state.c = np.zeros(world.dim_c)
         # landmark的属性数值设置
         for i, landmark in enumerate(world.landmarks):
             if i == 0:
                 landmark.color = np.array([1, 0, 0])
-                landmark.state.p_pos = np.array([np.random.uniform(-1, 1), np.random.uniform(0.9, 1.0)])
+                landmark.state.p_pos = np.array([np.random.uniform(-1.5, 1.5), np.random.uniform(2.5, 2.9)])
             elif i == 1:
                 landmark.color = np.array([0.25, 0.25, 0.25])
-                landmark.state.p_pos = np.array([np.random.uniform(-1, -0.1), np.random.uniform(-0.4, 0.5)])
+                landmark.state.p_pos = np.array([np.random.uniform(-1, -0.1), np.random.uniform(1, 2)])
             elif i == 2:
                 landmark.color = np.array([0.25, 0.25, 0.25])
-                landmark.state.p_pos = np.array([np.random.uniform(0.1, 1), np.random.uniform(-0.4, 0.5)])
+                landmark.state.p_pos = np.array([np.random.uniform(0.1, 1), np.random.uniform(1, 2)])
 
             landmark.state.p_vel = np.zeros(world.dim_p)
 
@@ -78,22 +78,22 @@ class Scenario(BaseScenario):
         l0 = world.landmarks[0].state.p_pos
         if agent.name == "agent_0":  # 如果是虚拟领航者
             distance = self.calculate_distance(a0, l0)
-            rew += 5 * np.exp(-1.8 * distance)
+            rew += 8 * np.exp(-1.8 * distance)
             rew -= distance
 
         elif agent.name == "agent_1":
             distance = self.calculate_distance(a1, a0)
-            rew += 2.5 * np.exp(-1.8 * distance)
+            rew += 2 * np.exp(-1.8 * distance)
             rew -= distance * 1.2
 
         elif agent.name == "agent_2":
             distance = self.calculate_distance(a2, a0)
-            rew += 2.5 * np.exp(-1.8 * distance)
+            rew += 2 * np.exp(-1.8 * distance)
             rew -= distance * 1.2
 
         elif agent.name == "agent_3":
             distance = self.calculate_distance(a3, a0)
-            rew += 2.5 * np.exp(-1.8 * distance)
+            rew += 2 * np.exp(-1.8 * distance)
             rew -= distance * 1.2
 
         # 障碍规避部分

@@ -265,13 +265,15 @@ class MultiAgentEnv(gym.Env):
         for i in range(len(self.viewers)):
             from multienvs import rendering
             # 更新边界，使之以agent为中心
-            cam_range = 1.7
+            y_up_range = 3
+            y_low_range = 1
+            x_range = 2
             if self.shared_viewer:
                 pos = np.zeros(self.world.dim_p)
             else:
                 pos = self.agents[i].state.p_pos
-            self.viewers[i].set_bounds(pos[0] - cam_range, pos[0] + cam_range, pos[1] - cam_range,
-                                       pos[1] + cam_range)
+            self.viewers[i].set_bounds(pos[0] - x_range, pos[0] + x_range, pos[1] - y_low_range,
+                                       pos[1] + y_up_range)
             # update geometry positions
 
             for e, entity in enumerate(self.world.entities):
