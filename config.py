@@ -48,6 +48,8 @@ def get_config():
     parser.add_argument("--apf_noise", type=int, default=0.1, help="初始噪声值")
     parser.add_argument("--apf_decay_steps", type=int, default=10000, help="使用apf步数")
 
+    parser.add_argument("--is_exp", type=bool, default=False, help="是否进行实验")
+
     args = parser.parse_args()
     args.use_wandb = True if not args.evaluate else False
     args.noise_std_decay = (args.noise_std_init - args.noise_std_min) / args.noise_decay_steps
