@@ -68,7 +68,7 @@ class MyWandb:
         self.project_name = 'maddpg_formation'
         self.wandb_user_name = 'weixw99'
         self.pa_name = socket.gethostname()
-        self.exp_name = "side-by-side"+"_train_num: " + str(parameters.max_train_num)
+        self.exp_name = "parallel_apf"+"_train_num: " + str(parameters.max_train_num)
         self.group_name = parameters.scenario
         self.wandb_dir = str(parameters.save_dir)
 
