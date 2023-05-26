@@ -43,7 +43,13 @@ class Runner:
     def run(self):
         episode_rewards = []  # sum of rewards for all agents
         agent_rewards = [[] for _ in range(self.env.n)]  # individual agent reward
-
+        if self.parameters.is_exp:  # 判断是否在进行实验
+            print('Starting connection...')
+            from DRL_Client import TCPClient
+            usv1 = TCPClient('192.168.1.3', 1230)
+            usv2 = TCPClient('192.168.1.4', 1231)
+            usv3 = TCPClient('192.168.1.5', 1232)
+            dis_rate = 20
         print('Starting iterations...')
         t_start = time.time()
         while self.train_step < self.parameters.max_train_num:
@@ -63,6 +69,17 @@ class Runner:
                 if self.parameters.use_noise_decay:
                     self.noise_std = self.noise_std - self.parameters.noise_std_decay if self.noise_std - self.parameters.noise_std_decay > self.parameters.noise_std_min else self.parameters.noise_std_min
             for _ in range(self.parameters.max_episode_len):
+                if self.parameters.is_exp:
+                    rev_data1 = usv1.get_data()  # 等待接收数据,收到处理好返回 (N, E)
+                    rev_data2 = usv2.get_data()  # 等待接收数据,收到处理好返回
+                    rev_data3 = usv3.get_data()  # 等待接收数据,收到处理好返回
+                    usv_position = [[rev_data1[1] / dis_rate, rev_data1[0] / dis_rate],  # (E, N)
+                                    [rev_data2[1] / dis_rate, rev_data2[0] / dis_rate],
+                                    [rev_data3[1] / dis_rate, rev_data3[0] / dis_rate]]  # 统一数量级
+                    print('usv_position:', usv_position)
+                    obs_n[1][2], obs_n[1][3] = usv_position[0][0], usv_position[0][1]
+                    obs_n[2][2], obs_n[2][3] = usv_position[1][0], usv_position[1][1]
+                    obs_n[3][2], obs_n[3][3] = usv_position[2][0], usv_position[2][1]
                 # 获取apf的力
                 if self.parameters.use_apf:
                     for agent, obs in zip(self.env.world.policy_agents, obs_n):
@@ -71,7 +88,14 @@ class Runner:
                 action_n = [agent.action(obs) for agent, obs in zip(self.trainers, obs_n)]
                 # step
                 new_obs_n, rew_n, done_n, info_n = self.env.step(action_n, obs_n)
+                if self.parameters.is_exp:
+                    send_pos1 = [new_obs_n[1][3] * dis_rate, new_obs_n[1][2] * dis_rate]  # (N, E)
+                    send_pos2 = [new_obs_n[2][3] * dis_rate, new_obs_n[2][2] * dis_rate]
+                    send_pos3 = [new_obs_n[3][3] * dis_rate, new_obs_n[3][2] * dis_rate]
 
+                    usv1.send_data(send_pos1)  # 将下一步的目标点发送出去
+                    usv2.send_data(send_pos2)  # 将下一步的目标点发送出去
+                    usv3.send_data(send_pos3)  # 将下一步的目标点发送出去
                 # collect experience
                 for i, agent in enumerate(self.trainers):  # 将新的经验元组（experience）添加到每个智能体的经验缓存（replay buffer）中
                     agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done_n[i])
